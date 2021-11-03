@@ -1,0 +1,16 @@
+{
+	'env_name': 'antmaze-large-diverse-v0',
+	'exp_name': 'lmp_tanh',
+	'seed': 0,
+	'reg': 0.1,
+	'tanh': True,
+	'traj_length': 10,
+	'batch_size': 50,
+	'latent_dim': 8,
+	'hidden_dims': [200, 200],
+	'num_eval': 5,
+	'eval_interval': 10,
+	'train_epochs': 100,
+	'goal_idxs': None,
+	'render': True
+}
