@@ -1,0 +1,20 @@
+{
+	'env_name': 'kitchen-partial-v0',
+	'exp_name': 'lmp_tanh_det_ar',
+	'seed': 0,
+	'reg': 0,
+	'tanh': True,
+	'traj_length': 10,
+	'batch_size': 50,
+	'latent_dim': 8,
+	'latent_reg': 0.1,
+	'lr': 3e-4,
+	'weight_decay': 1e-4,	
+	'hidden_dims': (400, 400),
+	'ar': True,
+	'num_eval': 0,
+	'eval_interval': 10,
+	'train_epochs': 100,
+	'goal_idxs': None,
+	'render': False
+}
