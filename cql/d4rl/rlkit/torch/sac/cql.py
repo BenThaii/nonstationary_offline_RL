@@ -10,6 +10,8 @@ from rlkit.core.eval_util import create_stats_ordered_dict
 from rlkit.torch.torch_rl_algorithm import TorchTrainer
 from torch import autograd
 
+
+
 class CQLTrainer(TorchTrainer):
     def __init__(
             self, 
@@ -148,6 +150,7 @@ class CQLTrainer(TorchTrainer):
 
     def train_from_torch(self, batch):
         self._current_epoch += 1
+        temp_vari_ben = self._current_epoch
         rewards = batch['rewards']
         terminals = batch['terminals']
         obs = batch['observations']
@@ -176,7 +179,7 @@ class CQLTrainer(TorchTrainer):
         else:
             q_new_actions = torch.min(
                 self.qf1(obs, new_obs_actions),
-                self.qf2(obs, new_obs_actions),
+                self.qf2(obs, new_obs_actions),         
             )
 
         policy_loss = (alpha*log_pi - q_new_actions).mean()
@@ -231,7 +234,7 @@ class CQLTrainer(TorchTrainer):
             qf2_loss = self.qf_criterion(q2_pred, q_target)
 
         ## add CQL
-        random_actions_tensor = torch.FloatTensor(q2_pred.shape[0] * self.num_random, actions.shape[-1]).uniform_(-1, 1) # .cuda()
+        random_actions_tensor = torch.FloatTensor(q2_pred.shape[0] * self.num_random, actions.shape[-1]).uniform_(-1, 1).cuda()
         curr_actions_tensor, curr_log_pis = self._get_policy_actions(obs, num_actions=self.num_random, network=self.policy)
         new_curr_actions_tensor, new_log_pis = self._get_policy_actions(next_obs, num_actions=self.num_random, network=self.policy)
         q1_rand = self._get_tensor_values(obs, random_actions_tensor, network=self.qf1)
@@ -287,16 +290,21 @@ class CQLTrainer(TorchTrainer):
         self._num_q_update_steps += 1
         self.qf1_optimizer.zero_grad()
         qf1_loss.backward(retain_graph=True)
-        self.qf1_optimizer.step()
+        # self.qf1_optimizer.step()
 
+        # error happens after this step, somehow modified the computational graph
         if self.num_qs > 1:
             self.qf2_optimizer.zero_grad()
             qf2_loss.backward(retain_graph=True)
-            self.qf2_optimizer.step()
+            # self.qf2_optimizer.step()
 
         self._num_policy_update_steps += 1
         self.policy_optimizer.zero_grad()
         policy_loss.backward(retain_graph=False)
+        
+        # ben: idk how the previous configurations worked, for interconnected networks, step must happen after all gradients are already computed
+        self.qf1_optimizer.step()
+        self.qf2_optimizer.step()
         self.policy_optimizer.step()
 
         """
