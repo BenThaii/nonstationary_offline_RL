@@ -52,10 +52,11 @@ class BaseRLAlgorithm(object, metaclass=abc.ABCMeta):
         raise NotImplementedError('_train must implemented by inherited class')
 
     def _end_epoch(self, epoch):
-        # if not self.trainer.discrete:
-        #     snapshot = self._get_snapshot()
-        #     logger.save_itr_params(epoch, snapshot)
-        #     gt.stamp('saving')
+        # saving snapshot every 50 epochs
+        if not self.trainer.discrete and epoch % 50 == 0 and epoch != 0:
+            snapshot = self._get_snapshot()
+            logger.save_itr_params(epoch, snapshot)
+            gt.stamp('saving')
         self._log_stats(epoch)
 
         self.expl_data_collector.end_epoch(epoch)
