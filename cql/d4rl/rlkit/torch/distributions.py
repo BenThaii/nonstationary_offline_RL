@@ -59,7 +59,8 @@ class TanhNormal(Distribution):
 
     def rsample(self, return_pretanh_value=False):
         """
-        Sampling in the reparameterization case.
+        Sampling in the reparameterization case. 
+        Ben: Gradient can pass through this
         """
         z = (
             self.normal_mean +

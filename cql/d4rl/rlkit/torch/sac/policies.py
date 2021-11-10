@@ -105,7 +105,7 @@ class TanhGaussianPolicy(Mlp, ExplorationPolicy):
         """
         h = obs
         for i, fc in enumerate(self.fcs):
-            h = self.hidden_activation(fc(h))
+            h = self.hidden_activation(fc(h))       #the last hidden layer is used to make both the standard deviation and the mean of the action
         mean = self.last_fc(h)
         if self.std is None:
             log_std = self.last_fc_log_std(h)
@@ -122,10 +122,10 @@ class TanhGaussianPolicy(Mlp, ExplorationPolicy):
         if deterministic:
             action = torch.tanh(mean)
         else:
-            tanh_normal = TanhNormal(mean, std)
+            tanh_normal = TanhNormal(mean, std)     # return a TanhNormal distribution object
             if return_log_prob:
                 if reparameterize is True:
-                    action, pre_tanh_value = tanh_normal.rsample(
+                    action, pre_tanh_value = tanh_normal.rsample(   #rsample, not normal sample -> with rsample, can pass the gradient
                         return_pretanh_value=True
                     )
                 else:
@@ -133,7 +133,7 @@ class TanhGaussianPolicy(Mlp, ExplorationPolicy):
                         return_pretanh_value=True
                     )
                 log_prob = tanh_normal.log_prob(
-                    action,
+                    action,                                 # the action here is sampled from the action ditribution -> return how likely that action is taken from the same aciton distribution
                     pre_tanh_value=pre_tanh_value
                 )
                 log_prob = log_prob.sum(dim=1, keepdim=True)
