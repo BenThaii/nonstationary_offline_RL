@@ -188,6 +188,6 @@ if __name__ == "__main__":
     variant['seed'] = args.seed
 
     rnd = np.random.randint(0, 1000000)
-    setup_logger(os.path.join('CQL_offline_mujoco_runs', str(rnd)), variant=variant, base_log_dir='/home/benthai/offline_RL/logger/random_expert_CQL_runs')
+    setup_logger(os.path.join('CQL_offline_mujoco_runs', str(rnd)), variant=variant, base_log_dir='/home/ben/offline_RL/logger/random_expert_CQL_runs')
     ptu.set_gpu_mode(True)
     experiment(variant)
