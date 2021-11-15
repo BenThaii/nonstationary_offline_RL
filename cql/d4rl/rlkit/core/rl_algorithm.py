@@ -53,7 +53,7 @@ class BaseRLAlgorithm(object, metaclass=abc.ABCMeta):
 
     def _end_epoch(self, epoch):
         # saving snapshot every 50 epochs
-        if not self.trainer.discrete and epoch % 50 == 0 and epoch != 0:
+        if not self.trainer.discrete and epoch % 50 == 0:
             snapshot = self._get_snapshot()
             logger.save_itr_params(epoch, snapshot)
             gt.stamp('saving')

@@ -7,6 +7,7 @@ from rlkit.torch.sac.policies import TanhGaussianPolicy, MakeDeterministic
 from rlkit.torch.sac.cql import CQLTrainer
 from rlkit.torch.networks import FlattenMlp
 from rlkit.torch.torch_rl_algorithm import TorchBatchRLAlgorithm
+from datetime import datetime
 
 import argparse, os
 import numpy as np
@@ -158,11 +159,13 @@ if __name__ == "__main__":
     )
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("--env", type=str, default='hopper-medium-v0')
+    # parser.add_argument("--env", type=str, default='hopper-medium-v0')
+    parser.add_argument("--env", type=str, default='walker2d-medium-v0')
     parser.add_argument("--gpu", default='0', type=str)
     parser.add_argument("--max_q_backup", type=str, default="False")          # if we want to try max_{a'} backups, set this to true
     parser.add_argument("--deterministic_backup", type=str, default="True")   # defaults to true, it does not backup entropy in the Q-function, as per Equation 3
     parser.add_argument("--policy_eval_start", default=40000, type=int)       # Defaulted to 20000 (40000 or 10000 work similarly)
+    # parser.add_argument("--policy_eval_start", default=40, type=int)       # Defaulted to 20000 (40000 or 10000 work similarly)
     parser.add_argument('--min_q_weight', default=1.0, type=float)            # the value of alpha, set to 5.0 or 10.0 if not using lagrange
     parser.add_argument('--policy_lr', default=1e-4, type=float)              # Policy learning rate
     parser.add_argument('--min_q_version', default=3, type=int)               # min_q_version = 3 (CQL(H)), version = 2 (CQL(rho)) 
@@ -187,7 +190,8 @@ if __name__ == "__main__":
     variant['env_name'] = args.env
     variant['seed'] = args.seed
 
-    rnd = np.random.randint(0, 1000000)
-    setup_logger(os.path.join('CQL_offline_mujoco_runs', str(rnd)), variant=variant, base_log_dir='/home/ben/offline_RL/logger/random_expert_CQL_runs')
+    start_time = datetime.now().strftime("%Y%m%d_%H%M") # current date and time
+
+    setup_logger(os.path.join('CQL_offline_mujoco_runs', args.env + "_" + start_time), snapshot_mode="gap", snapshot_gap= 300, variant=variant, base_log_dir='/home/ben/offline_RL/logger')
     ptu.set_gpu_mode(True)
     experiment(variant)

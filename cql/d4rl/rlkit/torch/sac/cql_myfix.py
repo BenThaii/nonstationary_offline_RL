@@ -10,6 +10,8 @@ from rlkit.core.eval_util import create_stats_ordered_dict
 from rlkit.torch.torch_rl_algorithm import TorchTrainer
 from torch import autograd
 
+
+
 class CQLTrainer(TorchTrainer):
     def __init__(
             self, 
@@ -44,7 +46,7 @@ class CQLTrainer(TorchTrainer):
             ## sort of backup
             max_q_backup=False,
             deterministic_backup=True,
-            num_random=10,
+            num_random=10,                  #number of random actions
             with_lagrange=False,
             lagrange_thresh=0.0,
     ):
@@ -128,6 +130,7 @@ class CQLTrainer(TorchTrainer):
         self.discrete = False
     
     def _get_tensor_values(self, obs, actions, network=None):
+        '''obtain the multiple q values given a vector of observations and actions'''
         action_shape = actions.shape[0]
         obs_shape = obs.shape[0]
         num_repeat = int (action_shape / obs_shape)
@@ -137,6 +140,7 @@ class CQLTrainer(TorchTrainer):
         return preds
 
     def _get_policy_actions(self, obs, num_actions, network=None):
+        '''get the policy to select an action multiple times (num_actions), and return the actions and their statistics'''
         obs_temp = obs.unsqueeze(1).repeat(1, num_actions, 1).view(obs.shape[0] * num_actions, obs.shape[1])
         new_obs_actions, _, _, new_obs_log_pi, *_ = network(
             obs_temp, reparameterize=True, return_log_prob=True,
@@ -157,12 +161,16 @@ class CQLTrainer(TorchTrainer):
         """
         Policy and Alpha Loss
         """
+        # use the policy network to select an action, log_pi is the likelihood of "new_obs_actions" being taken by the policy network (whose decision is made by policy_mean and policy_log_std)
         new_obs_actions, policy_mean, policy_log_std, log_pi, *_ = self.policy(
             obs, reparameterize=True, return_log_prob=True,
         )
         
-        if self.use_automatic_entropy_tuning:
-            alpha_loss = -(self.log_alpha * (log_pi + self.target_entropy).detach()).mean()
+        # training parameter [alpha] of maximum entropy RL
+        if self.use_automatic_entropy_tuning:                                               # maximize action entropy
+            # soft actor critic pg.3, eq.1 and pg.4,eq.3 ("-" because we minimize loss, not maximize reward), alpha is temperature
+            alpha_loss = -(self.log_alpha * (log_pi + self.target_entropy).detach()).mean() # detach to not pass gradient through log_pi (the policy network)
+                                                                                            
             self.alpha_optimizer.zero_grad()
             alpha_loss.backward()
             self.alpha_optimizer.step()
@@ -171,28 +179,12 @@ class CQLTrainer(TorchTrainer):
             alpha_loss = 0
             alpha = 1
 
-        if self.num_qs == 1:
-            q_new_actions = self.qf1(obs, new_obs_actions)
-        else:
-            q_new_actions = torch.min(
-                self.qf1(obs, new_obs_actions),
-                self.qf2(obs, new_obs_actions),
-            )
-
-        policy_loss = (alpha*log_pi - q_new_actions).mean()
-
-        if self._current_epoch < self.policy_eval_start:
-            """
-            For the initial few epochs, try doing behaivoral cloning, if needed
-            conventionally, there's not much difference in performance with having 20k 
-            gradient steps here, or not having it
-            """
-            policy_log_prob = self.policy.log_prob(obs, actions)
-            policy_loss = (alpha * log_pi - policy_log_prob).mean()
-        
+                
         """
         QF Loss
         """
+
+        # finding current q-value for state-action tuple in the batch
         q1_pred = self.qf1(obs, actions)
         if self.num_qs > 1:
             q2_pred = self.qf2(obs, actions)
@@ -204,42 +196,50 @@ class CQLTrainer(TorchTrainer):
             obs, reparameterize=True, return_log_prob=True,
         )
 
+        # finding target q-values (determined by next observation/state, and the next action that the current policy would take given that next observation/state)
         if not self.max_q_backup:
+            # max_q_backup
             if self.num_qs == 1:
                 target_q_values = self.target_qf1(next_obs, new_next_actions)
             else:
+                # this step is essential for Double DQN for more stability
                 target_q_values = torch.min(
                     self.target_qf1(next_obs, new_next_actions),
                     self.target_qf2(next_obs, new_next_actions),
                 )
             
             if not self.deterministic_backup:
+                # for maximum entropy
                 target_q_values = target_q_values - alpha * new_log_pi
         
         if self.max_q_backup:
-            """when using max q backup"""
+            """when using max q backup
+                idea: select multiple actions, then only retain the q-value of the best action (with highest q-value) to use
+                    because Q-value is defined to be the highest score that you can get, given a certain state-action tuple
+            """
             next_actions_temp, _ = self._get_policy_actions(next_obs, num_actions=10, network=self.policy)
             target_qf1_values = self._get_tensor_values(next_obs, next_actions_temp, network=self.target_qf1).max(1)[0].view(-1, 1)
             target_qf2_values = self._get_tensor_values(next_obs, next_actions_temp, network=self.target_qf2).max(1)[0].view(-1, 1)
             target_q_values = torch.min(target_qf1_values, target_qf2_values)
 
+        # adding reward to target/next Q-value, terminal state (terminals = 1) has no next state -> dont need to add q-value
         q_target = self.reward_scale * rewards + (1. - terminals) * self.discount * target_q_values
-        q_target = q_target.detach()
+        q_target = q_target.detach()            # dont allow gradient of Q-value to affect target-Q-value network
             
         qf1_loss = self.qf_criterion(q1_pred, q_target)
         if self.num_qs > 1:
             qf2_loss = self.qf_criterion(q2_pred, q_target)
 
         ## add CQL
-        random_actions_tensor = torch.FloatTensor(q2_pred.shape[0] * self.num_random, actions.shape[-1]).uniform_(-1, 1).cuda()
-        curr_actions_tensor, curr_log_pis = self._get_policy_actions(obs, num_actions=self.num_random, network=self.policy)
-        new_curr_actions_tensor, new_log_pis = self._get_policy_actions(next_obs, num_actions=self.num_random, network=self.policy)
-        q1_rand = self._get_tensor_values(obs, random_actions_tensor, network=self.qf1)
+        random_actions_tensor = torch.FloatTensor(q2_pred.shape[0] * self.num_random, actions.shape[-1]).uniform_(-1, 1).cuda()         #initialize to have random values
+        curr_actions_tensor, curr_log_pis = self._get_policy_actions(obs, num_actions=self.num_random, network=self.policy)             #using current observation
+        new_curr_actions_tensor, new_log_pis = self._get_policy_actions(next_obs, num_actions=self.num_random, network=self.policy)     #using next observation
+        q1_rand = self._get_tensor_values(obs, random_actions_tensor, network=self.qf1)                     # get likelihood of the random actions we generate
         q2_rand = self._get_tensor_values(obs, random_actions_tensor, network=self.qf2)
         q1_curr_actions = self._get_tensor_values(obs, curr_actions_tensor, network=self.qf1)
         q2_curr_actions = self._get_tensor_values(obs, curr_actions_tensor, network=self.qf2)
-        q1_next_actions = self._get_tensor_values(obs, new_curr_actions_tensor, network=self.qf1)
-        q2_next_actions = self._get_tensor_values(obs, new_curr_actions_tensor, network=self.qf2)
+        q1_next_actions = self._get_tensor_values(obs, new_curr_actions_tensor, network=self.qf1)           #Ben: should be next_obs
+        q2_next_actions = self._get_tensor_values(obs, new_curr_actions_tensor, network=self.qf2)           #Ben: should be next_obs
 
         cat_q1 = torch.cat(
             [q1_rand, q1_pred.unsqueeze(1), q1_next_actions, q1_curr_actions], 1
@@ -259,11 +259,13 @@ class CQLTrainer(TorchTrainer):
             cat_q2 = torch.cat(
                 [q2_rand - random_density, q2_next_actions - new_log_pis.detach(), q2_curr_actions - curr_log_pis.detach()], 1
             )
-            
+        
+        #equation 4 part 1 logsumexp (no consideration of in-distrubution Q-value)- S.Levine tutorial CQL0
         min_qf1_loss = torch.logsumexp(cat_q1 / self.temp, dim=1,).mean() * self.min_q_weight * self.temp
         min_qf2_loss = torch.logsumexp(cat_q2 / self.temp, dim=1,).mean() * self.min_q_weight * self.temp
-                    
+        
         """Subtract the log likelihood of data"""
+        #equation 4 part 1, second component (adjust for actions in the batch in-distribution actions) - S.Levine tutorial CQL1
         min_qf1_loss = min_qf1_loss - q1_pred.mean() * self.min_q_weight
         min_qf2_loss = min_qf2_loss - q2_pred.mean() * self.min_q_weight
         
@@ -283,21 +285,54 @@ class CQLTrainer(TorchTrainer):
         """
         Update networks
         """
+
+        
+
+
         # Update the Q-functions iff 
         self._num_q_update_steps += 1
         self.qf1_optimizer.zero_grad()
         qf1_loss.backward(retain_graph=True)
         self.qf1_optimizer.step()
 
+
         if self.num_qs > 1:
             self.qf2_optimizer.zero_grad()
-            qf2_loss.backward(retain_graph=True)
+            qf2_loss.backward(retain_graph=False)
             self.qf2_optimizer.step()
+
+
+
+        # update the policy network after having updated the q values
+
+        if self.num_qs == 1:
+            q_new_actions = self.qf1(obs, new_obs_actions)
+        else:
+            q_new_actions = torch.min(
+                self.qf1(obs, new_obs_actions),
+                self.qf2(obs, new_obs_actions),         
+            )
+
+        #TODO: continue from here
+        policy_loss = (alpha*log_pi - q_new_actions).mean()
+
+        if self._current_epoch < self.policy_eval_start:
+            """
+            For the initial few epochs, try doing behaivoral cloning, if needed
+            conventionally, there's not much difference in performance with having 20k 
+            gradient steps here, or not having it
+            """
+            policy_log_prob = self.policy.log_prob(obs, actions)
+            policy_loss = (alpha * log_pi - policy_log_prob).mean()
+
 
         self._num_policy_update_steps += 1
         self.policy_optimizer.zero_grad()
         policy_loss.backward(retain_graph=False)
         self.policy_optimizer.step()
+        
+        
+
 
         """
         Soft Updates
@@ -432,3 +467,4 @@ class CQLTrainer(TorchTrainer):
             target_qf1=self.target_qf1,
             target_qf2=self.target_qf2,
         )
+

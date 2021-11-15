@@ -10,6 +10,8 @@ from rlkit.core.eval_util import create_stats_ordered_dict
 from rlkit.torch.torch_rl_algorithm import TorchTrainer
 from torch import autograd
 
+
+
 class CQLTrainer(TorchTrainer):
     def __init__(
             self, 
@@ -142,9 +144,9 @@ class CQLTrainer(TorchTrainer):
             obs_temp, reparameterize=True, return_log_prob=True,
         )
         if not self.discrete:
-            return new_obs_actions, new_obs_log_pi.view(obs.shape[0], num_actions, 1)
+            return new_obs_actions.detach(), new_obs_log_pi.view(obs.shape[0], num_actions, 1).detach()
         else:
-            return new_obs_actions
+            return new_obs_actions.detach()
 
     def train_from_torch(self, batch):
         self._current_epoch += 1
@@ -157,12 +159,16 @@ class CQLTrainer(TorchTrainer):
         """
         Policy and Alpha Loss
         """
+        # use the policy network to select an action, log_pi is the likelihood of "new_obs_actions" being taken by the policy network (whose decision is made by policy_mean and policy_log_std)
         new_obs_actions, policy_mean, policy_log_std, log_pi, *_ = self.policy(
             obs, reparameterize=True, return_log_prob=True,
         )
         
-        if self.use_automatic_entropy_tuning:
-            alpha_loss = -(self.log_alpha * (log_pi + self.target_entropy).detach()).mean()
+        # training parameter [alpha] of maximum entropy RL
+        if self.use_automatic_entropy_tuning:                                               # maximize action entropy
+            # soft actor critic pg.3, eq.1 and pg.4,eq.3 ("-" because we minimize loss, not maximize reward), alpha is temperature
+            alpha_loss = -(self.log_alpha * (log_pi + self.target_entropy).detach()).mean() # detach to not pass gradient through log_pi (the policy network)
+                                                                                            
             self.alpha_optimizer.zero_grad()
             alpha_loss.backward()
             self.alpha_optimizer.step()
@@ -176,9 +182,9 @@ class CQLTrainer(TorchTrainer):
         else:
             q_new_actions = torch.min(
                 self.qf1(obs, new_obs_actions),
-                self.qf2(obs, new_obs_actions),
+                self.qf2(obs, new_obs_actions),         
             )
-
+        #TODO: continue from here
         policy_loss = (alpha*log_pi - q_new_actions).mean()
 
         if self._current_epoch < self.policy_eval_start:
@@ -283,21 +289,29 @@ class CQLTrainer(TorchTrainer):
         """
         Update networks
         """
+
+        # update the policy network (can do this first because the policy network used to compute q1,q2_losses are deatached)
+        self._num_policy_update_steps += 1
+        self.policy_optimizer.zero_grad()
+        policy_loss.backward(retain_graph=True)
+        self.policy_optimizer.step()
+
+
         # Update the Q-functions iff 
         self._num_q_update_steps += 1
         self.qf1_optimizer.zero_grad()
         qf1_loss.backward(retain_graph=True)
         self.qf1_optimizer.step()
 
+
         if self.num_qs > 1:
             self.qf2_optimizer.zero_grad()
-            qf2_loss.backward(retain_graph=True)
+            qf2_loss.backward(retain_graph=False)
             self.qf2_optimizer.step()
 
-        self._num_policy_update_steps += 1
-        self.policy_optimizer.zero_grad()
-        policy_loss.backward(retain_graph=False)
-        self.policy_optimizer.step()
+        
+        
+
 
         """
         Soft Updates
@@ -432,3 +446,4 @@ class CQLTrainer(TorchTrainer):
             target_qf1=self.target_qf1,
             target_qf2=self.target_qf2,
         )
+
