@@ -20,7 +20,7 @@ class CQLTrainer(TorchTrainer):
 			target_qf1,
 			target_qf2,
 			latent_policy=None,			# vanilla CQL does not have this
-			latent_policy_train_epochs=10000,
+			latent_policy_train_epochs=10000,	# vanilla CQL does not have this
 
 			discount=0.99,
 			reward_scale=1.0,
@@ -30,19 +30,19 @@ class CQLTrainer(TorchTrainer):
 			optimizer_class=optim.Adam,
 
 			soft_target_tau=1e-2,
-			target_update_period=1,
+			target_update_period=1,		# vanilla CQL does not have this
 			plotter=None,
 			render_eval_paths=False,
 
 			use_automatic_entropy_tuning=True,
-			latent_policy_train=False,
-			latent_policy_lr=3e-4,
+			latent_policy_train=False,		# vanilla CQL does not have this
+			latent_policy_lr=3e-4,			# vanilla CQL does not have this
 			target_entropy=None,
-			alpha=1.0,
-			cql_start=0,
-			only_nll_before_start=False,
+			alpha=1.0,				# vanilla CQL does not have this
+			cql_start=0,				# vanilla CQL does not have this
+			only_nll_before_start=False,		# vanilla CQL does not have this
 			cql_temp=10.0,
-			cql_alpha_lr=3e-4,
+			cql_alpha_lr=3e-4,			# vanilla CQL combines this with policy_lr
 			cql_tau=10.0,
 			cql_alpha=5.0,
 			cql_alpha_min=0.02,
