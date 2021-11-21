@@ -131,3 +131,6 @@ dmypy.json
 # pkl and log files
 *.pkl
 *.log
+
+# training log for unsupervised opal
+opal_modified/gp_aa_experiments/*

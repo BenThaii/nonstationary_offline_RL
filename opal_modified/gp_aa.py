@@ -1,9 +1,8 @@
 import torch
 import torch.nn as nn
 import os
-import gym
 import click
-import d4rl
+import d4rl, gym
 import argparse
 from utils import *
 from nn_models import *
@@ -12,6 +11,9 @@ from matplotlib import pyplot as plt
 import torch.utils.data as data_utils
 from matplotlib.pyplot import cm
 from torch.utils.tensorboard import SummaryWriter
+import time
+
+
 
 '''this module trains the OPAL latent primitives'''
 
@@ -69,7 +71,6 @@ def main(config):
 		config['ar'] = False					
 	# END DEFAULT PARAMS
 
-	print(config)
 	torch.manual_seed(config['seed'])
 	torch.cuda.manual_seed_all(config['seed'])
 	np.random.seed(config['seed'])
@@ -108,8 +109,9 @@ def main(config):
 	render_env = gym.wrappers.Monitor(env, os.path.join(eval_dir, 'no_train'), video_callable=lambda episode_id: is_render)
 	#view trajectory before training
 	eval_policy(render_env, gp_aa_model, config['num_eval'], config['traj_length'], config['tanh'], is_cuda) 	
-	
+	training_start = time.time()
 	for epoch_num in range(config['train_epochs']):
+		epoch_start = time.time()
 		total_loss = 0.
 		total_kl_loss = 0.
 		total_nll_loss = 0.
@@ -135,9 +137,13 @@ def main(config):
 		avg_kl_loss = total_kl_loss/(1+idx)
 		avg_nll_loss = total_nll_loss/(1+idx)
 		
+		epoch_end = time.time()
 		print(f"Avg loss for epoch {epoch_num} is {avg_loss}")
 		print(f"Avg KL loss for epoch {epoch_num} is {avg_kl_loss}")
 		print(f"Avg NLL loss for epoch {epoch_num} is {avg_nll_loss}")
+		print(f"Time epoch {epoch_num} is {epoch_end - epoch_start}")
+		print(f"Total time elapsed is {epoch_end - training_start}")
+
 		summary_writer.add_scalar("avg loss", avg_loss, epoch_num)
 		summary_writer.add_scalar("avg KL loss", avg_kl_loss, epoch_num)
 		summary_writer.add_scalar("avg NLL loss", avg_nll_loss, epoch_num)
