@@ -8,6 +8,7 @@ from rlkit.torch.sac.cql_myfix import CQLTrainer
 from rlkit.torch.networks import FlattenMlp
 from rlkit.torch.torch_rl_algorithm import TorchBatchRLAlgorithm
 from datetime import datetime
+import torch
 
 import argparse, os
 import numpy as np
@@ -29,37 +30,53 @@ def load_hdf5(dataset, replay_buffer):
 def experiment(variant):
     eval_env = gym.make(variant['env_name'])
     expl_env = eval_env
-    
-    obs_dim = expl_env.observation_space.low.size
-    action_dim = eval_env.action_space.low.size
 
-    M = variant['layer_size']
-    qf1 = FlattenMlp(
-        input_size=obs_dim + action_dim,
-        output_size=1,
-        hidden_sizes=[M, M, M],
-    )
-    qf2 = FlattenMlp(
-        input_size=obs_dim + action_dim,
-        output_size=1,
-        hidden_sizes=[M, M, M],
-    )
-    target_qf1 = FlattenMlp(
-        input_size=obs_dim + action_dim,
-        output_size=1,
-        hidden_sizes=[M, M, M],
-    )
-    target_qf2 = FlattenMlp(
-        input_size=obs_dim + action_dim,
-        output_size=1,
-        hidden_sizes=[M, M, M],
-    )
-    # tanh Gaussian policy is just a Gaussian policy , whose selected action is squashed through a tanh
-    policy = TanhGaussianPolicy(
-        obs_dim=obs_dim,
-        action_dim=action_dim,
-        hidden_sizes=[M, M, M], 
-    )
+    if variant['continue']:
+        # continue training
+        
+        data = torch.load(variant['cont_pkl_file'])
+
+        qf1 = data['trainer/qf1']
+        qf2 = data['trainer/qf2']
+        target_qf1 = data['trainer/target_qf1']
+        target_qf2 = data['trainer/target_qf2']
+        policy = data['trainer/policy']
+    else: 
+        # train from scratch
+        eval_env = gym.make(variant['env_name'])
+        expl_env = eval_env
+
+        obs_dim = expl_env.observation_space.low.size
+        action_dim = eval_env.action_space.low.size
+
+        M = variant['layer_size']
+        qf1 = FlattenMlp(
+            input_size=obs_dim + action_dim,
+            output_size=1,
+            hidden_sizes=[M, M, M],
+        )
+        qf2 = FlattenMlp(
+            input_size=obs_dim + action_dim,
+            output_size=1,
+            hidden_sizes=[M, M, M],
+        )
+        target_qf1 = FlattenMlp(
+            input_size=obs_dim + action_dim,
+            output_size=1,
+            hidden_sizes=[M, M, M],
+        )
+        target_qf2 = FlattenMlp(
+            input_size=obs_dim + action_dim,
+            output_size=1,
+            hidden_sizes=[M, M, M],
+        )
+        # tanh Gaussian policy is just a Gaussian policy , whose selected action is squashed through a tanh
+        policy = TanhGaussianPolicy(
+            obs_dim=obs_dim,
+            action_dim=action_dim,
+            hidden_sizes=[M, M, M], 
+        )
+
     eval_policy = MakeDeterministic(policy)
     eval_path_collector = MdpPathCollector(
         eval_env,
@@ -69,14 +86,14 @@ def experiment(variant):
         eval_env,
     )
     buffer_filename = None
-    if variant['buffer_filename'] is not None:
+    if variant['buffer_filename'] != None:
         buffer_filename = variant['buffer_filename']
     
     replay_buffer = EnvReplayBuffer(
         variant['replay_buffer_size'],
         expl_env,
     )
-    if variant['load_buffer'] and buffer_filename is not None:
+    if variant['load_buffer'] and buffer_filename != None:
         replay_buffer.load_buffer(buffer_filename)
     else:
         load_hdf5(d4rl.qlearning_dataset(eval_env), replay_buffer)
@@ -105,7 +122,7 @@ def experiment(variant):
     algorithm.train()
 
 def enable_gpus(gpu_str):
-    if (gpu_str is not ""):
+    if (gpu_str != ""):
         os.environ["CUDA_VISIBLE_DEVICES"] = gpu_str
     return
 
@@ -162,7 +179,7 @@ if __name__ == "__main__":
 
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--env", type=str, default='HalfCheetah-v2')
+    parser.add_argument("--env", type=str, default='antmaze-medium-play-v0')
     parser.add_argument("--gpu", default='0', type=str)
     parser.add_argument("--max_q_backup", type=str, default="False")          # if we want to try max_{a'} backups, set this to true
     parser.add_argument("--deterministic_backup", type=str, default="True")   # defaults to true, it does not backup entropy in the Q-function, as per Equation 3
@@ -193,6 +210,13 @@ if __name__ == "__main__":
     variant['load_buffer'] = True
     variant['env_name'] = args.env
     variant['seed'] = args.seed
+
+
+    variant['continue'] = False
+     
+    # loading code
+    variant['continue'] = True
+    variant['cont_pkl_file'] = "/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-play-v0-myfix-lagrange-5-20211124-2140/CQL_offline_mujoco_runs/antmaze-medium-play-v0_20211124_2140_2021_11_24_21_40_42_0000--s-0/itr_2700.pkl"
 
     start_time = datetime.now().strftime("%Y%m%d_%H%M") # current date and time
 

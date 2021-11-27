@@ -69,14 +69,14 @@ def experiment(variant):
         eval_env,
     )
     buffer_filename = None
-    if variant['buffer_filename'] is not None:
+    if variant['buffer_filename'] != None:
         buffer_filename = variant['buffer_filename']
     
     replay_buffer = EnvReplayBuffer(
         variant['replay_buffer_size'],
         expl_env,
     )
-    if variant['load_buffer'] and buffer_filename is not None:
+    if variant['load_buffer'] and buffer_filename != None:
         replay_buffer.load_buffer(buffer_filename)
     elif 'random-expert' in variant['env_name']:
         load_hdf5(d4rl.basic_dataset(eval_env), replay_buffer) 
@@ -108,7 +108,7 @@ def experiment(variant):
     algorithm.train()
 
 def enable_gpus(gpu_str):
-    if (gpu_str is not ""):
+    if (gpu_str != ""):
         os.environ["CUDA_VISIBLE_DEVICES"] = gpu_str
     return
 

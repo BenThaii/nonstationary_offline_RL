@@ -134,3 +134,6 @@ dmypy.json
 
 # training log for unsupervised opal
 opal_modified/gp_aa_experiments/*
+
+# training lof for cql_with_opal
+cql_with_opal/d4rl/logger/*
