@@ -59,6 +59,8 @@ def experiment(variant):
         hidden_sizes=[M, M, M], 
     )
     eval_policy = MakeDeterministic(policy)
+
+    #these path collector are used to store the path to retain performance information (rewards, path length, etc..)
     eval_path_collector = MdpPathCollector(
         eval_env,
         eval_policy,
@@ -122,7 +124,7 @@ if __name__ == "__main__":
         env_name='Hopper-v2',
         sparse_reward=False,
         algorithm_kwargs=dict(
-            num_epochs=3000,
+            num_epochs=3001,
             num_eval_steps_per_epoch=1000,
             num_trains_per_train_loop=1000,  
             num_expl_steps_per_train_loop=1000,
@@ -160,7 +162,8 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser()
     # parser.add_argument("--env", type=str, default='hopper-medium-v0')
-    parser.add_argument("--env", type=str, default='walker2d-medium-v0')
+    # parser.add_argument("--env", type=str, default='walker2d-medium-v0')
+    parser.add_argument("--env", type=str, default='antmaze-medium-diverse-v0')
     parser.add_argument("--gpu", default='0', type=str)
     parser.add_argument("--max_q_backup", type=str, default="False")          # if we want to try max_{a'} backups, set this to true
     parser.add_argument("--deterministic_backup", type=str, default="True")   # defaults to true, it does not backup entropy in the Q-function, as per Equation 3

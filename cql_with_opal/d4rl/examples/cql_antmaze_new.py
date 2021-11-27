@@ -4,9 +4,10 @@ from rlkit.envs.wrappers import NormalizedBoxEnv
 from rlkit.launchers.launcher_util import setup_logger
 from rlkit.samplers.data_collector import MdpPathCollector, CustomMDPPathCollector
 from rlkit.torch.sac.policies import TanhGaussianPolicy, MakeDeterministic
-from rlkit.torch.sac.cql import CQLTrainer
+from rlkit.torch.sac.cql_myfix import CQLTrainer
 from rlkit.torch.networks import FlattenMlp
 from rlkit.torch.torch_rl_algorithm import TorchBatchRLAlgorithm
+from datetime import datetime
 
 import argparse, os
 import numpy as np
@@ -120,7 +121,7 @@ if __name__ == "__main__":
         env_name='Hopper-v2',
         sparse_reward=False,
         algorithm_kwargs=dict(
-            num_epochs=3000,
+            num_epochs=3001,
             num_eval_steps_per_epoch=1000,
             num_trains_per_train_loop=1000,  
             num_expl_steps_per_train_loop=1000,
@@ -156,12 +157,18 @@ if __name__ == "__main__":
         ),
     )
     
+
+
+
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", type=str, default='HalfCheetah-v2')
     parser.add_argument("--gpu", default='0', type=str)
     parser.add_argument("--max_q_backup", type=str, default="False")          # if we want to try max_{a'} backups, set this to true
     parser.add_argument("--deterministic_backup", type=str, default="True")   # defaults to true, it does not backup entropy in the Q-function, as per Equation 3
     parser.add_argument("--policy_eval_start", default=40000, type=int)       # Defaulted to 20000 (40000 or 10000 work similarly)
+    # parser.add_argument("--policy_eval_start", default=40, type=int)       # Defaulted to 20000 (40000 or 10000 work similarly)
+    
     parser.add_argument('--min_q_weight', default=1.0, type=float)            # the value of alpha, set to 5.0 or 10.0 if not using lagrange
     parser.add_argument('--policy_lr', default=1e-4, type=float)              # Policy learning rate
     parser.add_argument('--min_q_version', default=3, type=int)               # min_q_version = 3 (CQL(H)), version = 2 (CQL(rho)) 
@@ -187,7 +194,9 @@ if __name__ == "__main__":
     variant['env_name'] = args.env
     variant['seed'] = args.seed
 
-    rnd = np.random.randint(0, 1000000)
-    setup_logger(os.path.join('CQL_offline_antmaze_runs', str(rnd)), variant=variant, base_log_dir='./data')
-    # ptu.set_gpu_mode(True)
+    start_time = datetime.now().strftime("%Y%m%d_%H%M") # current date and time
+
+    setup_logger(os.path.join('CQL_offline_mujoco_runs', args.env + "_" + start_time), snapshot_mode="gap", snapshot_gap= 300, variant=variant, 
+                                    base_log_dir='/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/')
+    ptu.set_gpu_mode(True)
     experiment(variant)

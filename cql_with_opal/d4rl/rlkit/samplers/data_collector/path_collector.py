@@ -145,6 +145,7 @@ class CustomMDPPathCollector(PathCollector):
         return paths
     
     def get_epoch_paths(self):
+        #_epoch_paths stores all paths collected using this class (seen in collect_new_paths)
         return self._epoch_paths
 
     def end_epoch(self, epoch):

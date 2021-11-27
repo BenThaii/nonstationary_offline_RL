@@ -316,7 +316,7 @@ class CQLTrainer(TorchTrainer):
             self._need_to_update_eval_statistics = False
             """
             Eval should set this to None.
-            This way, these statistics are only computed for one batch.
+            This way, these statistics are only computed for one batch. Ben: one batch per epoch
             """
             policy_loss = (log_pi - q_new_actions).mean()
 

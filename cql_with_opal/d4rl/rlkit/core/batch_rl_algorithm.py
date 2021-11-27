@@ -106,6 +106,7 @@ class BatchRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
 
 
     def _train(self):
+        '''this training function _train is called by function train() of BaseRLAlgorithm parent class'''
         if self.min_num_steps_before_training > 0 and not self.batch_rl:
             init_expl_paths = self.expl_data_collector.collect_new_paths(
                 self.max_path_length,
@@ -171,7 +172,7 @@ class BatchRLAlgorithm(BaseRLAlgorithm, metaclass=abc.ABCMeta):
                 gt.stamp('training', unique=False)
                 self.training_mode(False)
 
-            self._end_epoch(epoch)
+            self._end_epoch(epoch)      #this is a function of the parent class BaseRLAlgorithm -> save weights + evaluate + etc.
 
             # import ipdb; ipdb.set_trace()
             ## After epoch visualize

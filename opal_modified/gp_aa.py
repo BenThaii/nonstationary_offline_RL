@@ -59,7 +59,8 @@ def eval_policy(env, model, num_eval, traj_length, tanh, is_cuda, target_goal=No
 @click.option('--config', '-c', type=str, help='configuration_file')
 def main(config):
 	config = load_config(config)
-
+	epoch_start_idx = 0
+	continued_training = False
 	# DEFAULT PARAMS
 	if 'lr' not in config:
 		config['lr'] = 1e-3
@@ -97,6 +98,30 @@ def main(config):
 	
 	optimizer = torch.optim.Adam(gp_aa_model.parameters(), lr=config['lr'], weight_decay=config['weight_decay'])
 
+
+	#load optimizer and network states
+	continued_training = True
+	saved_model_dir_path = "/home/ben/offline_RL/nonstationary_offline_RL/opal_modified/gp_aa_experiments/antmaze-medium-diverse-v0/lmp_tanh/20211122_1337"
+	model_name = "lmp_tanh_49.pt"
+	epoch_start_idx = 50
+
+
+	saved_model_path = os.path.join(saved_model_dir_path, model_name)
+
+	checkpoint = torch.load(saved_model_path)
+	gp_aa_model.load_state_dict(checkpoint['gp_aa_model'])
+	optimizer.load_state_dict(checkpoint['opt'])
+
+	save_dir = saved_model_dir_path
+	eval_dir = saved_model_dir_path
+	log_dir = saved_model_dir_path
+
+	#finished loading optimizer and network states
+	
+
+
+
+
 	state_traj, action_traj = get_traj_dataset(env, config['env_name'], config['traj_length'])
 	state_traj, action_traj = torch.FloatTensor(state_traj), torch.FloatTensor(action_traj)
 
@@ -105,12 +130,12 @@ def main(config):
 	loader = data_utils.DataLoader(dataset, config['batch_size'])
 	
 	gp_aa_model.train()
-
-	render_env = gym.wrappers.Monitor(env, os.path.join(eval_dir, 'no_train'), video_callable=lambda episode_id: is_render)
-	#view trajectory before training
-	eval_policy(render_env, gp_aa_model, config['num_eval'], config['traj_length'], config['tanh'], is_cuda) 	
+	if continued_training == False:
+		#view trajectory before training
+		render_env = gym.wrappers.Monitor(env, os.path.join(eval_dir, 'no_train'), video_callable=lambda episode_id: is_render)
+		eval_policy(render_env, gp_aa_model, config['num_eval'], config['traj_length'], config['tanh'], is_cuda) 	
 	training_start = time.time()
-	for epoch_num in range(config['train_epochs']):
+	for epoch_num in range(epoch_start_idx, config['train_epochs']):
 		epoch_start = time.time()
 		total_loss = 0.
 		total_kl_loss = 0.

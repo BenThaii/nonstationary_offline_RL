@@ -112,15 +112,17 @@ class DiscretizeEnv(ProxyEnv, Env):
         return super().step(continuous_action)
 
 class LatentPolicyEnv(ProxyEnv, Env):
+    '''Ben: probably use this to evaluate the policy, not to train, because it does not encode trajectory into z'''
     def __init__(self, wrapped_env, latent_policy, latent_action_space, traj_length, prior_policy=None):
         super().__init__(wrapped_env)
         self.latent_policy = latent_policy
         self.traj_length = traj_length
         self.prior_policy = prior_policy
-        self.discrete_latent = discrete_latent
+        # self.discrete_latent = discrete_latent          #Ben: commented out because not used
         self.action_space = latent_action_space
 
     def step(self, latent, deterministic=False, get_traj=False):
+        '''use the primitive decoder to actuate in the real environment for duration = traj_length'''
         if get_traj:
             obs_traj = []
             act_traj = []
@@ -154,9 +156,11 @@ class LatentPolicyEnv(ProxyEnv, Env):
         if get_traj:
             obs_traj = np.concatenate(obs_traj, axis=0)
             act_traj = np.concatenate(act_traj, axis=0)
-            return s_obs, total_reward, done, info, (obs_traj, act_traj)
+            # return s_obs, total_reward, done, info, (obs_traj, act_traj)      #generate error
+            return obs, total_reward, done, info, (obs_traj, act_traj)      
 
-        return s_obs, total_reward, done, info
+        # return s_obs, total_reward, done, info                                #generate error
+        return obs, total_reward, done, info
 
     def step_state(self, state, latent, deterministic=True):
         # Only works when state is raw state and not image features

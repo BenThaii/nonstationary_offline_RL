@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "gp_aa.py",
             "console": "integratedTerminal",
-            "args":["--config=kitchen_mixed.txt"],
+            "args":["--config=antmaze_medium.txt"],
         }
     ]
 }

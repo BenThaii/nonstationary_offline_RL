@@ -57,12 +57,12 @@ class BaseRLAlgorithm(object, metaclass=abc.ABCMeta):
             snapshot = self._get_snapshot()
             logger.save_itr_params(epoch, snapshot)
             gt.stamp('saving')
-        self._log_stats(epoch)
+        self._log_stats(epoch)                          #this log_state function get performance metric of train/expl/eval paths (as collected during the training phase)
 
-        self.expl_data_collector.end_epoch(epoch)
+        self.expl_data_collector.end_epoch(epoch)       #reset the list of epoch_paths (so that they dont have more than the prescribed number of elements)
         self.eval_data_collector.end_epoch(epoch)
-        self.replay_buffer.end_epoch(epoch)
-        self.trainer.end_epoch(epoch)
+        self.replay_buffer.end_epoch(epoch)             #this one doesn't do anything
+        self.trainer.end_epoch(epoch)                   #finalize the trainer to conclude 1 batch 
 
         for post_epoch_func in self.post_epoch_funcs:
             post_epoch_func(self, epoch)
@@ -102,9 +102,9 @@ class BaseRLAlgorithm(object, metaclass=abc.ABCMeta):
             self.expl_data_collector.get_diagnostics(),
             prefix='exploration/'
         )
-        expl_paths = self.expl_data_collector.get_epoch_paths()
+        expl_paths = self.expl_data_collector.get_epoch_paths()         #obtain exploration path
         # import ipdb; ipdb.set_trace()
-        if hasattr(self.expl_env, 'get_diagnostics'):
+        if hasattr(self.expl_env, 'get_diagnostics'):                   #save diagnostic information of exploration path
             logger.record_dict(
                 self.expl_env.get_diagnostics(expl_paths),
                 prefix='exploration/',
