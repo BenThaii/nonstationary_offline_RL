@@ -99,7 +99,7 @@ def main(config):
 	optimizer = torch.optim.Adam(gp_aa_model.parameters(), lr=config['lr'], weight_decay=config['weight_decay'])
 
 
-	#load optimizer and network states
+	#load optimizer and network states for continued training
 	continued_training = True
 	saved_model_dir_path = "/home/ben/offline_RL/nonstationary_offline_RL/opal_modified/gp_aa_experiments/antmaze-medium-diverse-v0/lmp_tanh/20211122_1337"
 	model_name = "lmp_tanh_49.pt"

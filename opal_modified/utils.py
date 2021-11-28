@@ -62,7 +62,7 @@ def get_traj_dataset(env, env_name, traj_length):
 
     obs_ = []
     action_ = []
-
+    # number transitions in the dataset
     N = dataset['rewards'].shape[0]
     episode_step = 0
     for i in range(N-1):
@@ -80,12 +80,15 @@ def get_traj_dataset(env, env_name, traj_length):
             # current_trajectory is finished (either terminated, or reached the end of the episode -> immediate transition becomes rubbish) -> dont add to the trajectory
             
 
-            #truncate the current trajectory into chunks with length = traj_length            
+            #truncate the current trajectory into sections with length = traj_length            
             seq_length = len(obs_)
+            
+
             for start_ind in range(seq_length):
                 end_ind = start_ind + traj_length
-                if end_ind > seq_length:
-                    break
+                # if end_ind > seq_length:
+                #     break
+                end_ind = min(end_ind, seq_length)      # the final section may not contain as many transitions as the previous sections
 
                 obs_ls.append(obs_[start_ind:end_ind])
                 action_ls.append(action_[start_ind:end_ind])
