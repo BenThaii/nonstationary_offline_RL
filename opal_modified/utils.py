@@ -76,6 +76,7 @@ def get_traj_dataset(env, env_name, traj_length):
         else:
             final_timestep = (episode_step == env._max_episode_steps - 1)
         
+        # if done_bool or final_timestep:
         if done_bool or final_timestep:
             # current_trajectory is finished (either terminated, or reached the end of the episode -> immediate transition becomes rubbish) -> dont add to the trajectory
             
@@ -86,9 +87,9 @@ def get_traj_dataset(env, env_name, traj_length):
 
             for start_ind in range(seq_length):
                 end_ind = start_ind + traj_length
-                # if end_ind > seq_length:
-                #     break
-                end_ind = min(end_ind, seq_length)      # the final section may not contain as many transitions as the previous sections
+                if end_ind > seq_length:
+                    break
+                # end_ind = min(end_ind, seq_length)      # the final section may not contain as many transitions as the previous sections
 
                 obs_ls.append(obs_[start_ind:end_ind])
                 action_ls.append(action_[start_ind:end_ind])

@@ -24,6 +24,7 @@ def get_policy_average_returns(args):
         path = rollout(
                 env,
                 policy)
+        print(path['rewards'])
         eval_paths.append(path)
     
     logger.record_dict(
@@ -34,7 +35,7 @@ def get_policy_average_returns(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--file', type=str, default="model_to_evaluate/itr_2700.pkl",
+    parser.add_argument('--file', type=str, default="model_to_evaluate/itr_0.pkl",
                         help='path to the snapshot file')
 
     parser.add_argument('--gpu', action='store_true', default=True)       # set to true if this argument is encountered

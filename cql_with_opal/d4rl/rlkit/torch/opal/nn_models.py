@@ -244,8 +244,11 @@ class ARPolicyNetwork(nn.Module):
 				- use act_mod to predict the likelihood of each bin of action, then use ce_loss to determine how likely the action of interest is selected from that distribution over all bins of actions
 
 		'''
-		l_action = ((action - self.low_act)//self.bin_size).long()			#convert the action to its corresponding bin (in each dimension). This is because act_mod provides the discretized logits for each bin, for within each bin
+		#l_action = ((action - self.low_act)//self.bin_size).long()			#convert the action to its corresponding bin (in each dimension). This is because act_mod provides the discretized logits for each bin, for within each bin
 
+		l_action = torch.div(action - self.low_act, self.bin_size, rounding_mode='trunc').long() # the above implementation is deprecated
+
+		
 		if state is None:
 			state_inp = latent
 		elif latent is None:

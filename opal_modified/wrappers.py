@@ -115,7 +115,7 @@ class LatentPolicyEnv(ProxyEnv, Env):
     '''Ben: probably use this to evaluate the policy, not to train, because it does not encode trajectory into z'''
     def __init__(self, wrapped_env, latent_policy, latent_action_space, traj_length, prior_policy=None):
         super().__init__(wrapped_env)
-        self.latent_policy = latent_policy
+        self.latent_policy = latent_policy                  #primitive decoder
         self.traj_length = traj_length
         self.prior_policy = prior_policy
         # self.discrete_latent = discrete_latent          #Ben: commented out because not used

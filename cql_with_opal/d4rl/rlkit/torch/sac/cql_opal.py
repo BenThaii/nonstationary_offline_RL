@@ -21,7 +21,7 @@ class CQLTrainer(TorchTrainer):
 			target_qf2,
 			latent_policy=None,					# vanilla CQL does not have this
 			latent_policy_train_epochs=10000,	# vanilla CQL does not have this
-
+			opal_unsupervised_policy = None,
 			discount=0.99,
 			reward_scale=1.0,
 
@@ -75,20 +75,22 @@ class CQLTrainer(TorchTrainer):
 		self.latent_policy_train = latent_policy_train
 		self.latent_policy_train_epochs = latent_policy_train_epochs		# only train the primitive decoder from OPAL for this number of epochs
 
+		self.opal_unsupervised_policy = opal_unsupervised_policy
+
 		self.soft_target_tau = soft_target_tau
 		self.target_update_period = target_update_period
 
 		# START of CQL Params
 		self._current_epoch = 0
 		self.cql_start = cql_start
-		self.only_nll_before_start = only_nll_before_start
+		self.only_nll_before_start = only_nll_before_start			##
 		self.cql_temp = cql_temp
 		self.cql_tau = cql_tau
-		self.cql_alpha = cql_alpha
-		self.cql_alpha_min = cql_alpha_min
-		self.cql_num_action_samples = cql_num_action_samples
+		self.cql_alpha = cql_alpha						##
+		self.cql_alpha_min = cql_alpha_min				##
+		self.cql_num_action_samples = cql_num_action_samples				##
 		self.use_cql_alpha_tuning = use_cql_alpha_tuning
-		self.use_max_target = use_max_target
+		self.use_max_target = use_max_target				##
 
 		if self.use_cql_alpha_tuning:
 			# tune the \alpha to balance the conservative penalty vs the bellman backup
@@ -182,7 +184,7 @@ class CQLTrainer(TorchTrainer):
 		"""
 		Policy and Alpha Loss
 		"""
-		# trains the latent (primitive) policy 
+		# trains the latent (primitive decoder) policy 
 			# this training phase enforces the primitive policy to act "like" the behavior policy in the trajectory, as characterized by latent z from the OPAL encoder 
 			# specific to OPAL CQL
 		if self.latent_policy_train and self._current_epoch < self.latent_policy_train_epochs:          
@@ -214,19 +216,7 @@ class CQLTrainer(TorchTrainer):
 			alpha_loss = 0
 			alpha = self._alpha
 
-		q_new_actions = torch.min(self.qf1(obs, new_obs_actions), self.qf2(obs, new_obs_actions))
-
-		policy_loss = (alpha*log_pi - q_new_actions).mean()
-
-		if self._current_epoch < self.cql_start:
-			"""Start with BC"""
-			policy_log_prob = self.policy.log_prob(obs, actions)
-			if self.only_nll_before_start:
-				policy_loss = - policy_log_prob.mean()
-			else:				
-				policy_loss = (alpha*log_pi - policy_log_prob).mean()
 		
-		self._current_epoch += 1
 		"""
 		QF Loss
 		"""
@@ -320,8 +310,23 @@ class CQLTrainer(TorchTrainer):
 		self.qf1_optimizer.step()
 
 		self.qf2_optimizer.zero_grad()
-		qf2_loss.backward(retain_graph=True)
+		qf2_loss.backward(retain_graph=False)
 		self.qf2_optimizer.step()
+
+		# update the policy network after having updated the q values
+		q_new_actions = torch.min(self.qf1(obs, new_obs_actions), self.qf2(obs, new_obs_actions))
+
+		policy_loss = (alpha*log_pi - q_new_actions).mean()
+
+		if self._current_epoch < self.cql_start:
+			"""Start with BC to the latent encoding z, not the physical actions themselves"""
+			policy_log_prob = self.policy.log_prob(obs, actions)
+			if self.only_nll_before_start:
+				policy_loss = - policy_log_prob.mean()
+			else:				
+				policy_loss = (alpha*log_pi - policy_log_prob).mean()
+		
+		self._current_epoch += 1
 
 		self.policy_optimizer.zero_grad()
 		policy_loss.backward(retain_graph=False)
@@ -425,6 +430,7 @@ class CQLTrainer(TorchTrainer):
 				target_qf1=self.qf1,
 				target_qf2=self.qf2,
 				latent_policy=self.latent_policy,
+				opal_unsupervised_policy = self.opal_unsupervised_policy
 			)
 		else:
 			return dict(

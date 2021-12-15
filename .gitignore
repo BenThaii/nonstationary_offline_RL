@@ -128,12 +128,18 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# pkl and log files
+# model (pkl, pt) and dataset (npy) files
 *.pkl
-*.log
+*.npy
+*.pt
 
 # training log for unsupervised opal
 opal_modified/gp_aa_experiments/*
 
 # training lof for cql_with_opal
 cql_with_opal/d4rl/logger/*
+
+# model to evaluate and opal_primitive network
+cql_with_opal/d4rl/model_to_evaluate/*
+cql_with_opal/d4rl/opal_primitive/*
+

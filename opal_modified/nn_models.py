@@ -410,10 +410,3 @@ class LMP(nn.Module):
 
 		return kl_loss, nll_loss
 
-
-A = LMP(2,2,2,[2,2], ar=True)
-B = A.forward_encoder(torch.ones(2,2,2), torch.ones(2,2,2))
-C = A.decoder.forward(torch.ones(1,2), torch.ones(1,2))
-C = A.calc_loss(torch.ones(2,2,2), 0.5 * torch.ones(2,2,2), False)
-print('hi')
-
