@@ -131,7 +131,7 @@ def get_opal_dataset(env, traj_length, primitive_encoder, discount = 0.99, datas
         obs_ls = []
         action_ls = []
         reward_ls = []
-        done_ls = []
+        terminal_ls = []
 
         N = dataset['rewards'].shape[0]
         episode_step = 0
@@ -139,36 +139,32 @@ def get_opal_dataset(env, traj_length, primitive_encoder, discount = 0.99, datas
             obs = dataset['observations'][i].astype(np.float32)
             action = dataset['actions'][i].astype(np.float32)
             reward = dataset['rewards'][i].astype(np.float32)
-            done_bool = bool(dataset['terminals'][i])
+            terminal_bool = bool(dataset['terminals'][i])
             
             obs_ls.append(obs)
             action_ls.append(action)
             reward_ls.append(reward)
-            done_ls.append(done_bool)
+            terminal_ls.append(terminal_bool)
 
-            true_done_bool = False
-            # if done_bool == True and bool(dataset['terminals'][i+1]) == False:
-            #     true_done_bool = True
-            
             #check against max episode length of the environment
             if use_timeouts:
                 final_timestep = dataset['timeouts'][i]
             else:
                 final_timestep = (episode_step == env._max_episode_steps - 1)
             
-            if (not terminate_on_end) and (true_done_bool or final_timestep):
+            if (not terminate_on_end) and final_timestep:
                 # current_trajectory is finished (either terminated, or reached the end of the episode -> immediate transition becomes rubbish) -> dont add to the trajectory
                 
                 #truncate the current trajectory into chunks with length = traj_length            
                 seq_length = len(obs_ls)
                 
-                action_ls_torch = torch.tensor(action_ls).to(ptu.device) 
-                obs_ls_torch = torch.tensor(obs_ls).to(ptu.device) 
+                # TODO: delete
+                # action_ls_torch = torch.tensor(action_ls).to(ptu.device) 
+                # obs_ls_torch = torch.tensor(obs_ls).to(ptu.device) 
 
-                num_sub_traj = len(action_ls_torch)+1-traj_length
+                num_sub_traj = len(action_ls)+1-traj_length
 
-
-                if seq_length > traj_length:        # have more than 1 sub trajectory
+                if seq_length > traj_length:        # have more than 1 sub trajectory in the sequence
                     action_subtraj_batch = []
                     obs_subtraj_batch = []
                     for start_ind in range(num_sub_traj):
@@ -177,34 +173,34 @@ def get_opal_dataset(env, traj_length, primitive_encoder, discount = 0.99, datas
                         obs_subtraj = obs_ls[start_ind:end_ind]
                         action_subtraj = action_ls[start_ind:end_ind]
                         reward_subtraj = reward_ls[start_ind:end_ind]
+                        terminal_subtraj = terminal_ls[start_ind:end_ind]
 
                         action_subtraj_batch.append(action_subtraj)
                         obs_subtraj_batch.append(obs_subtraj)
-                        obs_ls_torch
 
+                        # obtain discounted rewards of the current subtrajectory
                         accum_reward = 0
                         for j in range(traj_length):
                             accum_reward += discount**j * reward_subtraj[j]
 
+                        # obtain the terminal status of the current subtrajectory, identify as terminal if has had any terminal flag = True during subtrajectory
+                        terminal = np.any(terminal_subtraj)
                         
-
-                        # accum_reward = sum(reward_subtraj)           #TODO: add discount
-                        
+                        # obtain next observation
                         if end_ind >= seq_length:
                             # next observation lies in the next sequence/trajectory
                             next_obs = dataset['observations'][i+1].astype(np.float32)
-                            done = bool(dataset['terminals'][i+1])
                         else:
                             next_obs = obs_ls[end_ind]
-                            done = done_ls[end_ind]
 
                         obs_.append(obs_ls[start_ind])
                         next_obs_.append(next_obs)
                         # action_.append(batch_latent_encoding[start_ind].cpu.numpy())
                         reward_.append(accum_reward)          
-                        done_.append(done)
+                        done_.append(terminal)
                         obs_traj_.append(obs_subtraj)
                         action_traj_.append(action_subtraj)
+                        
                     obs_subtraj_batch = torch.Tensor(obs_subtraj_batch).to(ptu.device) 
                     action_subtraj_batch = torch.Tensor(action_subtraj_batch).to(ptu.device) 
                     batch_latent_encoding, _ = primitive_encoder(obs_subtraj_batch, action_subtraj_batch)
@@ -214,7 +210,7 @@ def get_opal_dataset(env, traj_length, primitive_encoder, discount = 0.99, datas
                 obs_ls = []
                 action_ls = []
                 reward_ls = []
-                done_ls = []
+                terminal_ls = []
             
             episode_step += 1
         return {

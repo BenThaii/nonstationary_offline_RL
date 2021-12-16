@@ -9,6 +9,8 @@
             "type": "python",
             "request": "launch",
             "program": "examples/cql_mujoco_new.py",
+            // "program": "scripts/run_policy.py",
+            // "args":["--file=model_to_evaluate/itr_2400.pkl"],
             "console": "integratedTerminal"
         }
     ]
