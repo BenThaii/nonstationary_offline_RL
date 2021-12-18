@@ -107,12 +107,11 @@ def get_traj_dataset(env, env_name, traj_length):
     return np.array(obs_ls), np.array(action_ls)
 
 def get_opal_dataset(env, traj_length, primitive_encoder, discount = 0.99, dataset=None, terminate_on_end=False, **kwargs):
-    
     if dataset is None:
         dataset = env.get_dataset(**kwargs)
 
-    # do not save gradient in primitive encoder
-    with torch.no_grad():
+    
+    with torch.no_grad():               # do not save gradient in primitive encoder
         # The newer version of the dataset adds an explicit
         # timeouts field. Keep old method for backwards compatability.
         use_timeouts = False
@@ -157,11 +156,6 @@ def get_opal_dataset(env, traj_length, primitive_encoder, discount = 0.99, datas
                 
                 #truncate the current trajectory into chunks with length = traj_length            
                 seq_length = len(obs_ls)
-                
-                # TODO: delete
-                # action_ls_torch = torch.tensor(action_ls).to(ptu.device) 
-                # obs_ls_torch = torch.tensor(obs_ls).to(ptu.device) 
-
                 num_sub_traj = len(action_ls)+1-traj_length
 
                 if seq_length > traj_length:        # have more than 1 sub trajectory in the sequence
@@ -223,107 +217,3 @@ def get_opal_dataset(env, traj_length, primitive_encoder, discount = 0.99, datas
             'action_traj': np.array(action_traj_),
         }
 
-
-
-def old_dataset(env, traj_length, primitive_encoder, dataset=None, terminate_on_end=False, **kwargs):
-    
-    if dataset is None:
-        dataset = env.get_dataset(**kwargs)
-
-    # do not save gradient in primitive encoder
-    with torch.no_grad():
-        # The newer version of the dataset adds an explicit
-        # timeouts field. Keep old method for backwards compatability.
-        use_timeouts = False
-        if 'timeouts' in dataset:
-            use_timeouts = True
-
-
-        obs_ = []
-        next_obs_ = []
-        action_ = []
-        reward_ = []
-        done_ = []
-        obs_traj_ = []
-        action_traj_ = []
-
-        obs_traj = []
-        action_traj = []
-        reward_traj = []
-
-        N = 10
-        N = dataset['rewards'].shape[0]
-        episode_step = 0
-        traj_step = 0
-        for i in range(N-1):
-            obs = dataset['observations'][i].astype(np.float32)
-            action = dataset['actions'][i].astype(np.float32)
-            reward = dataset['rewards'][i].astype(np.float32)
-            done_bool = bool(dataset['terminals'][i])
-            
-            #check against max episode length of the environment
-            if use_timeouts:
-                final_timestep = dataset['timeouts'][i]
-            else:
-                final_timestep = (episode_step == env._max_episode_steps - 1)
-            
-            if (not terminate_on_end) and (done_bool or final_timestep):
-                # current_trajectory is finished (either terminated, or reached the end of the episode -> immediate transition becomes rubbish) -> dont add to the trajectory
-                episode_step  = 0
-                obs_traj = []
-                action_traj = []
-                reward_traj = []
-                traj_step = -1  # because will be incremented at the end of the loop
-
-            if traj_step == 0:
-                if episode_step == 0:
-                    prev_obs = obs     # first observation of the episode, has no prev_obs
-                elif len(obs_traj) == traj_length:                  # only collect subtrajectories of the same length
-                    # reach the start state of the (sub)trajectory with at least 1 trajectory before it (has prev_obs)
-                    obs_.append(prev_obs)
-
-                    
-                    # obs_nparray = np.array(obs_traj)
-                    # obs_torcharray = ptu.from_numpy(obs_nparray).float()
-                    obs_torcharray = torch.tensor(obs_traj).to(ptu.device)   
-                    obs_torcharray = obs_torcharray[None,:,:]             # add 1 dimension for batch size = 1
-
-                    # action_nparray = np.array(action_traj)
-                    # action_torcharray = ptu.from_numpy(action_nparray).float()
-                    action_torcharray = torch.tensor(action_traj).to(ptu.device) 
-                    action_torcharray = action_torcharray[None,:,:]             # add 1 dimension for batch size = 1
-
-                    latent_encoding,_ = primitive_encoder(obs_torcharray, action_torcharray)    #only take the encoder mean (assume deterministic)
-
-                    action_.append(latent_encoding.squeeze(0).cpu().numpy())     #TODO: may be incorrect
-                    reward_.append(sum(reward_traj))
-                    next_obs_.append(obs)
-                    done_.append(done_bool)             # very rare that we see done_bool = True, because done_bool may happen in the middle of the (sub)trajectory
-                    
-                    
-                    obs_traj_.append(np.array(obs_traj))
-                    action_traj_.append(np.array(action_traj))
-                    if np.array(obs_traj_).dtype == np.dtype('O'):
-                        print('hi')
-                    prev_obs = obs
-
-                    obs_traj = []
-                    action_traj = []
-                    reward_traj = []
-
-
-
-            obs_traj.append(obs)
-            action_traj.append(action)
-            reward_traj.append(reward)
-            episode_step += 1
-            traj_step = (traj_step + 1)%traj_length
-        return {
-            'observations': np.array(obs_),
-            'actions': np.array(action_),
-            'rewards': np.array(reward_),
-            'next_observations': np.array(next_obs_),
-            'terminals': np.array(done_),
-            'obs_traj': np.array(obs_traj_),
-            'action_traj': np.array(action_traj_),
-        }

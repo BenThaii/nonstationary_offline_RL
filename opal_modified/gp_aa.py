@@ -102,7 +102,8 @@ def main(config):
 
 	#load optimizer and network states for continued training
 	continued_training = True
-	saved_model_dir_path = "/home/ben/offline_RL/nonstationary_offline_RL/opal_modified/gp_aa_experiments/antmaze-medium-diverse-v0/lmp_tanh/20211213_1247"
+	print('continued')
+	saved_model_dir_path = "/home/ben/offline_RL/nonstationary_offline_RL/opal_modified/gp_aa_experiments/antmaze-medium-diverse-v0/lmp_tanh/20211215_2151"
 	model_name = "lmp_tanh_49.pt"
 	epoch_start_idx = 50
 

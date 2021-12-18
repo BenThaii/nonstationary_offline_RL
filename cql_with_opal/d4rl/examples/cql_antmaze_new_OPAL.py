@@ -224,7 +224,7 @@ if __name__ == "__main__":
             # CQL
             cql_temp=1.0,
             version=3,                          #min_q_version
-            #min_q_weight=1.0,
+            cql_alpha=5.0,                      #min_q_weight
 
             # lagrange
             use_cql_alpha_tuning=True,          # with_lagrange

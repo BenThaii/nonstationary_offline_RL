@@ -68,7 +68,6 @@ def get_traj_dataset(env, env_name, traj_length):
     for i in range(N-1):
         obs = dataset['observations'][i].astype(np.float32)
         action = dataset['actions'][i].astype(np.float32)
-        done_bool = bool(dataset['terminals'][i])
         
         #check against max episode length of the environment
         if use_timeouts:
@@ -77,7 +76,7 @@ def get_traj_dataset(env, env_name, traj_length):
             final_timestep = (episode_step == env._max_episode_steps - 1)
         
         # if done_bool or final_timestep:
-        if done_bool or final_timestep:
+        if final_timestep:
             # current_trajectory is finished (either terminated, or reached the end of the episode -> immediate transition becomes rubbish) -> dont add to the trajectory
             
 
