@@ -113,13 +113,22 @@ class DiscretizeEnv(ProxyEnv, Env):
 
 class LatentPolicyEnv(ProxyEnv, Env):
     '''Ben: probably use this to evaluate the policy, not to train, because it does not encode trajectory into z'''
-    def __init__(self, wrapped_env, latent_policy, latent_action_space, traj_length, prior_policy=None):
+    def __init__(self, wrapped_env, latent_policy, latent_dim, traj_length, prior_policy=None):
         super().__init__(wrapped_env)
         self.latent_policy = latent_policy                  #primitive decoder
         self.traj_length = traj_length                      # number of actions that the primitive decoder needs to decide before another latent encoding is given to it
         self.prior_policy = prior_policy
         # self.discrete_latent = discrete_latent            #Ben: commented out because not used
-        # self.action_space = latent_action_space           # Ben: commented because conflicting
+        
+        # Ben: prepared according to normalizedboxenv
+        ub = np.ones(latent_dim)
+        latent_action_space = Box(-1 * ub, ub)
+
+        self.action_space = latent_action_space           # Ben: commented because conflicting
+
+        # for recognizing that we are getting close to the target
+        self.target_goal = wrapped_env.target_goal
+        print('target is', self.target_goal)
 
     def step(self, latent, deterministic=False, get_traj=False):
         '''use the primitive decoder to actuate in the real environment for duration = traj_length'''
@@ -147,8 +156,12 @@ class LatentPolicyEnv(ProxyEnv, Env):
             if get_traj:
                 act_traj.append(action[None])            
             
-            obs, reward, done, info = self.wrapped_env.step(action)            
+            obs, reward, done, info = self.wrapped_env.step(action) 
             total_reward += reward
+            
+            if (np.linalg.norm(obs[:2] - self.target_goal) <= 0.5):
+                print("\n\n\n\n\n\n\n\n Able to reach the goal \n\n\n\n\n\n\n\n")           
+            
 
             if done:                
                 break

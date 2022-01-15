@@ -254,6 +254,7 @@ def setup_logger(
         log_dir = create_log_dir(exp_prefix, **create_log_dir_kwargs)
 
     if variant is not None:
+        variant['log_dir'] = log_dir
         logger.log("Variant:")
         logger.log(json.dumps(dict_to_safe_json(variant), indent=2))
         variant_log_path = osp.join(log_dir, variant_log_file)

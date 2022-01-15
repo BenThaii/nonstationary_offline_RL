@@ -415,9 +415,33 @@ class LMP(nn.Module):
 		return kl_loss, nll_loss
 
 
-A = LMP(2,2,2,[2,2], ar=True)
-B = A.forward_encoder(torch.ones(2,2,2), torch.ones(2,2,2))
-C = A.decoder.forward(torch.ones(1,2), torch.ones(1,2))
-C = A.calc_loss(torch.ones(2,2,2), 0.5 * torch.ones(2,2,2), False)
-print('hi')
+class DummyDecoder(nn.Module):
+	def __init__(self, latent_dim, state_dim, hidden_dims, act_dim, act_fn=nn.ReLU()):
+		super(DummyDecoder, self).__init__()
+		self.latent_dim = latent_dim
+		self.state_dim = state_dim
+		self.base = FCNetwork(inp_dim=latent_dim+state_dim, hidden_dims=hidden_dims, out_dim=act_dim, act_fn=act_fn)
 
+		
+		
+	def forward(self, latent, state):
+		# used for primitive encoder
+		if state is None:
+			inp = latent
+		elif latent is None:
+			inp = state
+		else:
+			inp = torch.cat([latent, state], dim=1)
+		
+		return self.base(inp)
+
+	def act(self, latent, state, deterministic=False):
+		return latent
+
+class DummyEncoder(nn.Module):
+	def __init__(self):
+		super(DummyEncoder, self).__init__()
+
+	def forward(self, obs, actions):
+		# used for primitive encoder
+		return actions.squeeze(1), None

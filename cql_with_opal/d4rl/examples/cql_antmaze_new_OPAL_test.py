@@ -1,11 +1,13 @@
 import rlkit.torch.pytorch_util as ptu
-from rlkit.data_management.env_replay_buffer import EnvReplayBuffer
+from rlkit.data_management.env_replay_buffer import EnvReplayBufferOpal
 from rlkit.envs.wrappers import NormalizedBoxEnv
+from rlkit.torch.opal.wrappers import LatentPolicyEnv
 from rlkit.launchers.launcher_util import setup_logger
 from rlkit.samplers.data_collector import MdpPathCollector, CustomMDPPathCollector
 from rlkit.torch.sac.policies import TanhGaussianPolicy, MakeDeterministic
-from rlkit.torch.sac.cql import CQLTrainer
-# from rlkit.torch.sac.cql_myfix import CQLTrainer
+from rlkit.torch.sac.cql_opal import CQLTrainer
+from rlkit.torch.opal.nn_models import DummyDecoder, DummyEncoder, LMP
+from rlkit.torch.opal.utils import load_config, get_opal_dataset
 from rlkit.torch.networks import FlattenMlp
 from rlkit.torch.torch_rl_algorithm import TorchBatchRLAlgorithm
 from datetime import datetime
@@ -17,7 +19,7 @@ import numpy as np
 import h5py
 import d4rl, gym
 
-def load_hdf5(dataset, replay_buffer):
+def load_hdf5_opal(dataset, replay_buffer):
     replay_buffer._observations = dataset['observations']
     replay_buffer._next_obs = dataset['next_observations']
     replay_buffer._actions = dataset['actions']
@@ -25,30 +27,86 @@ def load_hdf5(dataset, replay_buffer):
     replay_buffer._rewards = (np.expand_dims(dataset['rewards'], 1) - 0.5)*4.0   
     replay_buffer._terminals = np.expand_dims(dataset['terminals'], 1)  
     replay_buffer._size = dataset['terminals'].shape[0]
+    
+    replay_buffer._obs_traj = dataset['obs_traj']
+    replay_buffer._action_traj = dataset['action_traj']
+
     print ('Number of terminals on: ', replay_buffer._terminals.sum())
     replay_buffer._top = replay_buffer._size
 
 def experiment(variant):
-    eval_env = gym.make(variant['env_name'])
-    expl_env = eval_env
+    env = gym.make(variant['env_name'])
 
     if variant['continue']:
         # continue training
         
         data = torch.load(variant['cont_pkl_file'])
 
+        # loading opal primitive configurations and networks
+        config = load_config(variant['opal_env_config'])
+        # DEFAULT PARAMS for opal configuration
+        if 'lr' not in config:
+            config['lr'] = 1e-3
+        if 'weight_decay' not in config:
+            config['weight_decay'] = 0
+        if 'latent_reg' not in config:
+            config['latent_reg'] = 0
+        if 'ar' not in config:
+            config['ar'] = False
+        opal_policy = data['trainer/opal_unsupervised_policy']
+        opal_policy.to(ptu.device)                              #convert the opal network to the same device as everything else
+        primitive_decoder_opal = DummyDecoder(latent_dim=config['latent_dim'], 
+                                            state_dim=env.observation_space.shape[0],
+                                            hidden_dims=[10], 
+                                            act_dim=env.action_space.shape[0])
+        primitive_encoder = DummyEncoder()
+        prior_encoder = opal_policy.prior
+
+        print('traj length', config['traj_length'])
+        eval_env = LatentPolicyEnv(env, primitive_decoder_opal, config['latent_dim'], config['traj_length'])
+        expl_env = eval_env
+
         qf1 = data['trainer/qf1']
         qf2 = data['trainer/qf2']
         target_qf1 = data['trainer/target_qf1']
         target_qf2 = data['trainer/target_qf2']
         policy = data['trainer/policy']
+        
     else: 
         # train from scratch
-        eval_env = gym.make(variant['env_name'])
+
+
+        # loading opal primitive configurations and networks
+        config = load_config(variant['opal_env_config'])
+        # DEFAULT PARAMS for opal configuration
+        if 'lr' not in config:
+            config['lr'] = 1e-3
+        if 'weight_decay' not in config:
+            config['weight_decay'] = 0
+        if 'latent_reg' not in config:
+            config['latent_reg'] = 0
+        if 'ar' not in config:
+            config['ar'] = False
+        opal_policy = LMP(latent_dim=config['latent_dim'], state_dim=env.observation_space.shape[0], 
+		    action_dim=env.action_space.shape[0], hidden_dims=config['hidden_dims'], goal_idxs=config['goal_idxs'],
+            tanh=config['tanh'], latent_reg=config['latent_reg'], ar=config['ar'])
+        
+        checkpoint = torch.load(variant['opal_primitive_file'])
+        opal_policy.load_state_dict(checkpoint['gp_aa_model'])
+        opal_policy.to(ptu.device)                              #convert the opal network to the same device as everything else
+        primitive_decoder_opal = DummyDecoder(latent_dim=config['latent_dim'], 
+                                            state_dim=env.observation_space.shape[0],
+                                            hidden_dims=[10], 
+                                            act_dim=env.action_space.shape[0])
+        primitive_encoder = DummyEncoder()
+        prior_encoder = opal_policy.prior
+        
+
+        eval_env = LatentPolicyEnv(env, primitive_decoder_opal, config['latent_dim'], config['traj_length'])
         expl_env = eval_env
 
         obs_dim = expl_env.observation_space.low.size
-        action_dim = eval_env.action_space.low.size
+        action_dim = config['latent_dim']
 
         M = variant['layer_size']
         qf1 = FlattenMlp(
@@ -78,6 +136,10 @@ def experiment(variant):
             hidden_sizes=[M, M, M], 
         )
 
+        
+
+
+
     eval_policy = MakeDeterministic(policy)
     eval_path_collector = MdpPathCollector(
         eval_env,
@@ -90,14 +152,20 @@ def experiment(variant):
     if variant['buffer_filename'] != None:
         buffer_filename = variant['buffer_filename']
     
-    replay_buffer = EnvReplayBuffer(
-        variant['replay_buffer_size'],
-        expl_env,
+    replay_buffer = EnvReplayBufferOpal(
+        max_replay_buffer_size = variant['replay_buffer_size'],
+        env = expl_env,
+        primitive_traj_length = config['traj_length'],
     )
     if variant['load_buffer'] and buffer_filename != None:
         replay_buffer.load_buffer(buffer_filename)
     else:
-        load_hdf5(d4rl.qlearning_dataset(eval_env), replay_buffer)
+        if variant['latent_dataset']:
+            dataset = np.load(variant['latent_dataset'], allow_pickle = True)
+            dataset = dataset[()]
+        else:
+            dataset = get_opal_dataset(eval_env, traj_length= config['traj_length'], primitive_encoder= primitive_encoder, discount=variant['trainer_kwargs']['discount'])
+        load_hdf5_opal(dataset, replay_buffer)
        
     trainer = CQLTrainer(
         env=eval_env,
@@ -106,6 +174,8 @@ def experiment(variant):
         qf2=qf2,
         target_qf1=target_qf1,
         target_qf2=target_qf2,
+        latent_policy= primitive_decoder_opal,
+        opal_unsupervised_policy = opal_policy,
         **variant['trainer_kwargs']
     )
     algorithm = TorchBatchRLAlgorithm(
@@ -145,34 +215,42 @@ if __name__ == "__main__":
             num_expl_steps_per_train_loop=1000,
             min_num_steps_before_training=1000,
             max_path_length=1000,
-            batch_size=256,
+            batch_size=128,
         ),
         trainer_kwargs=dict(
             discount=0.99,
             soft_target_tau=5e-3,
-            policy_lr=1E-4,
-            qf_lr=3E-4,
+            # policy_lr=1E-4,
+            # qf_lr=3E-4,
             reward_scale=1,
             use_automatic_entropy_tuning=True,
 
             # Target nets/ policy vs Q-function update
-            policy_eval_start=40000,
-            num_qs=2,
+            cql_start=40000,        #policy_eval_start
 
             # CQL
-            temp=1.0,
-            min_q_version=3,
-            min_q_weight=1.0,
+            cql_temp=1.0,
+            version=3,                          #min_q_version
+            cql_alpha=1.0,                      #min_q_weight
 
             # lagrange
-            with_lagrange=True,   # Defaults to true
-            lagrange_thresh=10.0,
+            use_cql_alpha_tuning=True,          # with_lagrange
+            # cql_tau=10.0,                       # lagrange_thresh
             
-            # extra params
-            num_random=10,
-            max_q_backup=False,
-            deterministic_backup=False,
-        ),
+
+            # opal stuff:
+            only_nll_before_start = False,          # for behavior cloning of latent variable
+            latent_policy_train = True,              # for behavior cloning of primitive decoder           
+            # latent_policy_train = False,              # for behavior cloning of primitive decoder           
+
+
+            # suggested in the paper:
+            policy_lr = 3E-5,
+            qf_lr = 3E-4,
+            latent_policy_lr = 3E-4,
+            cql_tau=5.0,     
+            cql_alpha_min = 0.001      
+        )
     )
     
 
@@ -187,24 +265,23 @@ if __name__ == "__main__":
     parser.add_argument("--policy_eval_start", default=40000, type=int)       # Defaulted to 20000 (40000 or 10000 work similarly)
     # parser.add_argument("--policy_eval_start", default=40, type=int)       # Defaulted to 20000 (40000 or 10000 work similarly)
     
-    parser.add_argument('--min_q_weight', default=1.0, type=float)            # the value of alpha, set to 5.0 or 10.0 if not using lagrange
     parser.add_argument('--policy_lr', default=1e-4, type=float)              # Policy learning rate
-    parser.add_argument('--min_q_version', default=3, type=int)               # min_q_version = 3 (CQL(H)), version = 2 (CQL(rho)) 
+    parser.add_argument('--version', default=3, type=int)               # min_q_version = 3 (CQL(H)), version = 2 (CQL(rho)) 
     parser.add_argument('--lagrange_thresh', default=5.0, type=float)         # the value of tau, corresponds to the CQL(lagrange) version
     parser.add_argument('--seed', default=10, type=int)
+    parser.add_argument('--opal_primitive_file', type =str)
+    parser.add_argument('--opal_env_config', type =str)
+    parser.add_argument('--latent_dataset', type =str)
 
     args = parser.parse_args()
     # enable_gpus(args.gpu)
-    variant['trainer_kwargs']['max_q_backup'] = (True if args.max_q_backup == 'True' else False)
-    variant['trainer_kwargs']['deterministic_backup'] = (True if args.deterministic_backup == 'True' else False)
-    variant['trainer_kwargs']['min_q_weight'] = args.min_q_weight
     variant['trainer_kwargs']['policy_lr'] = args.policy_lr
-    variant['trainer_kwargs']['min_q_version'] = args.min_q_version
-    variant['trainer_kwargs']['temp'] = 1.0
-    variant['trainer_kwargs']['policy_eval_start'] = args.policy_eval_start
-    variant['trainer_kwargs']['lagrange_thresh'] = args.lagrange_thresh
+    variant['trainer_kwargs']['version'] = args.version
+    variant['trainer_kwargs']['cql_temp'] = 1.0
+    variant['trainer_kwargs']['cql_start'] = args.policy_eval_start
+    variant['trainer_kwargs']['cql_tau'] = args.lagrange_thresh
     if args.lagrange_thresh < 0.0:
-        variant['trainer_kwargs']['with_lagrange'] = False
+        variant['trainer_kwargs']['use_cql_alpha_tuning'] = False
     
     variant['buffer_filename'] = None
 
@@ -212,12 +289,18 @@ if __name__ == "__main__":
     variant['env_name'] = args.env
     variant['seed'] = args.seed
 
+    variant['opal_primitive_file'] = "opal_primitive/" + args.opal_primitive_file
+    variant['opal_env_config'] = "opal_config/" + args.opal_env_config
+    variant['latent_dataset'] = args.latent_dataset
+
+
 
     variant['continue'] = False
      
-    # loading code
+    # # continue policy training code
     # variant['continue'] = True
-    # variant['cont_pkl_file'] = "/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-play-v0-myfix-lagrange-5-20211124-2140/CQL_offline_mujoco_runs/antmaze-medium-play-v0_20211124_2140_2021_11_24_21_40_42_0000--s-0/itr_2700.pkl"
+    # variant['cont_pkl_file'] = "/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20211207-1111-completed/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20211207_1111_2021_12_07_11_11_11_0000--s-0/itr_3000.pkl"
+    # # continue policy training code ends...
 
     start_time = datetime.now().strftime("%Y%m%d_%H%M") # current date and time
 

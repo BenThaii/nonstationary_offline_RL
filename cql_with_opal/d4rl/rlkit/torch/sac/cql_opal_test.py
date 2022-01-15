@@ -292,7 +292,7 @@ class CQLTrainer(TorchTrainer):
 			cql_alpha = torch.clamp(self.log_cql_alpha.exp(), min=self.cql_alpha_min, max=1000000.0)
 			min_qf1_loss = cql_alpha * (min_qf1_loss - self.cql_tau)
 			min_qf2_loss = cql_alpha * (min_qf2_loss - self.cql_tau)
-# 
+
 			self.cql_alpha_optimizer.zero_grad()
 			alpha_prime_loss = -0.5 * (min_qf1_loss + min_qf2_loss)
 			alpha_prime_loss.backward(retain_graph=True)
@@ -316,10 +316,10 @@ class CQLTrainer(TorchTrainer):
 		# update the policy network after having updated the q values
 		q_new_actions = torch.min(self.qf1(obs, new_obs_actions), self.qf2(obs, new_obs_actions))
 
-		policy_loss = (alpha*log_pi - q_new_actions).mean()			# want the policy to have high q values (minimize neg q) and max entropy -> low log pi
+		policy_loss = (alpha*log_pi - q_new_actions).mean()
 
 		if self._current_epoch < self.cql_start:
-			"""Start with BC to the latent encoding z (for the CQL agent), not the physical actions themselves -> CQL tries to immitate the dataset during this period"""
+			"""Start with BC to the latent encoding z, not the physical actions themselves"""
 			policy_log_prob = self.policy.log_prob(obs, actions)
 			if self.only_nll_before_start:
 				policy_loss = - policy_log_prob.mean()

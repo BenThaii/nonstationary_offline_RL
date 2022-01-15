@@ -78,7 +78,7 @@ class EnvReplayBufferOpal(SimpleReplayBuffer):
         self._action_traj = np.zeros((max_replay_buffer_size, primitive_traj_length, action_dim))
         #--
 
-        if env_info_sizes is None:
+        if env_info_sizes is None: 
             if hasattr(env, 'info_sizes'):
                 env_info_sizes = env.info_sizes
             else:

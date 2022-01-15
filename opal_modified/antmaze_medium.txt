@@ -10,7 +10,7 @@
 	'hidden_dims': [200, 200],
 	'num_eval': 5,
 	'eval_interval': 10,
-	'train_epochs': 100,
+	'train_epochs': 101,
 	'goal_idxs': None,
-	'render': True
+	'render': False
 }

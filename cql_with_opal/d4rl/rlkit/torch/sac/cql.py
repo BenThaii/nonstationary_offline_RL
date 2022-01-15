@@ -269,12 +269,16 @@ class CQLTrainer(TorchTrainer):
         
         if self.with_lagrange:
             alpha_prime = torch.clamp(self.log_alpha_prime.exp(), min=0.0, max=1000000.0)
+            self.eval_statistics['min_qf1_loss_tau'] = (min_qf1_loss - self.target_action_gap).item()
+            self.eval_statistics['min_qf2_loss_tau'] = (min_qf2_loss - self.target_action_gap).item()
+			
             min_qf1_loss = alpha_prime * (min_qf1_loss - self.target_action_gap)
             min_qf2_loss = alpha_prime * (min_qf2_loss - self.target_action_gap)
 
             self.alpha_prime_optimizer.zero_grad()
             alpha_prime_loss = (-min_qf1_loss - min_qf2_loss)*0.5 
             alpha_prime_loss.backward(retain_graph=True)
+            self.eval_statistics['cql_alpha_grad'] = self.log_alpha_prime.grad.item()
             self.alpha_prime_optimizer.step()
 
         qf1_loss = qf1_loss + min_qf1_loss

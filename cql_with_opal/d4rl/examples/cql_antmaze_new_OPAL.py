@@ -5,7 +5,8 @@ from rlkit.torch.opal.wrappers import LatentPolicyEnv
 from rlkit.launchers.launcher_util import setup_logger
 from rlkit.samplers.data_collector import MdpPathCollector, CustomMDPPathCollector
 from rlkit.torch.sac.policies import TanhGaussianPolicy, MakeDeterministic
-from rlkit.torch.sac.cql_opal import CQLTrainer
+from rlkit.torch.sac.cql_opal_raw import CQLTrainer
+# from rlkit.torch.sac.cql_opal import CQLTrainer
 from rlkit.torch.opal.nn_models import LMP
 from rlkit.torch.opal.utils import load_config, get_opal_dataset
 from rlkit.torch.networks import FlattenMlp
@@ -59,7 +60,10 @@ def experiment(variant):
         primitive_encoder = opal_policy.forward_encoder
         prior_encoder = opal_policy.prior
 
-        eval_env = LatentPolicyEnv(env, primitive_decoder_opal, config['latent_dim'], config['traj_length'], prior_encoder)
+        eval_env = LatentPolicyEnv(env, primitive_decoder_opal, config['latent_dim'], 
+                                    config['traj_length'], 
+                                    prior_encoder
+                                    )
         expl_env = eval_env
 
         qf1 = data['trainer/qf1']
@@ -93,12 +97,13 @@ def experiment(variant):
         primitive_decoder_opal = opal_policy.decoder
         primitive_encoder = opal_policy.forward_encoder
         prior_encoder = opal_policy.prior
+        
 
         eval_env = LatentPolicyEnv(env, primitive_decoder_opal, config['latent_dim'], config['traj_length'], prior_encoder)
         expl_env = eval_env
 
         obs_dim = expl_env.observation_space.low.size
-        action_dim = eval_env.action_space.low.size
+        action_dim = config['latent_dim']
 
         M = variant['layer_size']
         qf1 = FlattenMlp(
@@ -202,24 +207,32 @@ if __name__ == "__main__":
         sparse_reward=False,
         algorithm_kwargs=dict(
             num_epochs=3001,
-            num_eval_steps_per_epoch=1000,
-            num_trains_per_train_loop=1000,  
-            num_expl_steps_per_train_loop=1000,
-            min_num_steps_before_training=1000,
-            max_path_length=1000,
+            # num_eval_steps_per_epoch=1000,
+            # num_trains_per_train_loop=1000,  
+            # num_expl_steps_per_train_loop=1000,
+            # min_num_steps_before_training=1000,
+            # max_path_length=1000,
+
+            num_eval_steps_per_epoch=2000,
+            num_trains_per_train_loop=2000,  
+            num_expl_steps_per_train_loop=2000,
+            min_num_steps_before_training=2000,
+            max_path_length=2000,
+
             batch_size=128,
+            # batch_size=512,
         ),
         trainer_kwargs=dict(
             discount=0.99,
             soft_target_tau=5e-3,
-            policy_lr=1E-4,
-            qf_lr=3E-4,
+            # policy_lr=1E-4,
+            # qf_lr=3E-4,
             reward_scale=1,
             use_automatic_entropy_tuning=True,
+            # use_automatic_entropy_tuning=False,
 
             # Target nets/ policy vs Q-function update
             cql_start=40000,        #policy_eval_start
-            # num_qs=2,
 
             # CQL
             cql_temp=1.0,
@@ -228,17 +241,22 @@ if __name__ == "__main__":
 
             # lagrange
             use_cql_alpha_tuning=True,          # with_lagrange
-            cql_tau=10.0,                       # lagrange_thresh
+            # use_cql_alpha_tuning=False,          # with_lagrange
             
 
             # opal stuff:
             only_nll_before_start = False,          # for behavior cloning of latent variable
-            latent_policy_train = True              # for behavior cloning of preimitive decoder
-            # extra params
-            # num_random=10,
-            # max_q_backup=False,
-            # deterministic_backup=False,
-        ),
+            latent_policy_train = False,              # for behavior cloning of primitive decoder           
+
+
+            # suggested in the paper:
+            policy_lr = 3E-5,
+            qf_lr = 3E-4,
+            latent_policy_lr = 3E-4,
+            cql_tau=5.0,     
+            cql_alpha_min = 0.01,     
+            min_q_weight = 5
+        )
     )
     
 
@@ -253,19 +271,22 @@ if __name__ == "__main__":
     parser.add_argument("--policy_eval_start", default=40000, type=int)       # Defaulted to 20000 (40000 or 10000 work similarly)
     # parser.add_argument("--policy_eval_start", default=40, type=int)       # Defaulted to 20000 (40000 or 10000 work similarly)
     
-    parser.add_argument('--policy_lr', default=1e-4, type=float)              # Policy learning rate
+    parser.add_argument('--policy_lr', default=3E-5, type=float)              # Policy learning rate
     parser.add_argument('--version', default=3, type=int)               # min_q_version = 3 (CQL(H)), version = 2 (CQL(rho)) 
     parser.add_argument('--lagrange_thresh', default=5.0, type=float)         # the value of tau, corresponds to the CQL(lagrange) version
     parser.add_argument('--seed', default=10, type=int)
     parser.add_argument('--opal_primitive_file', type =str)
     parser.add_argument('--opal_env_config', type =str)
     parser.add_argument('--latent_dataset', type =str)
+    parser.add_argument('--min_q_weight', default=5.0, type=float)           
+
 
     args = parser.parse_args()
     # enable_gpus(args.gpu)
     variant['trainer_kwargs']['policy_lr'] = args.policy_lr
     variant['trainer_kwargs']['version'] = args.version
     variant['trainer_kwargs']['cql_temp'] = 1.0
+    variant['trainer_kwargs']['min_q_weight'] = args.min_q_weight
     variant['trainer_kwargs']['cql_start'] = args.policy_eval_start
     variant['trainer_kwargs']['cql_tau'] = args.lagrange_thresh
     if args.lagrange_thresh < 0.0:
