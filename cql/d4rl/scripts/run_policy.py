@@ -1,4 +1,4 @@
-from rlkit.samplers.rollout_functions import rollout
+from rlkit.samplers.rollout_functions import nonstationary_rollout
 from rlkit.torch.pytorch_util import set_gpu_mode
 import argparse
 import torch
@@ -17,7 +17,7 @@ def simulate_policy(args):
         set_gpu_mode(True)
         policy.cuda()
     while True:
-        path = rollout(
+        path = nonstationary_rollout(
             env,
             policy,
             max_path_length=args.H,

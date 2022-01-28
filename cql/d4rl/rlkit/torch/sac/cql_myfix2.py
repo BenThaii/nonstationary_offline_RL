@@ -179,7 +179,7 @@ class CQLTrainer(TorchTrainer):
                 self.qf2(obs, new_obs_actions),
             )
 
-        policy_loss = (alpha*log_pi - q_new_actions).mean()
+        policy_loss = (alpha*log_pi - q_new_actions.clone()).mean()
 
         if self._current_epoch < self.policy_eval_start:
             """
@@ -231,7 +231,6 @@ class CQLTrainer(TorchTrainer):
             qf2_loss = self.qf_criterion(q2_pred, q_target)
 
         ## add CQL
-        # me: take as many random actions as possible (at both the current and future states, because we are about the q function, not the state)
         random_actions_tensor = torch.FloatTensor(q2_pred.shape[0] * self.num_random, actions.shape[-1]).uniform_(-1, 1).to(ptu.device)
         curr_actions_tensor, curr_log_pis = self._get_policy_actions(obs, num_actions=self.num_random, network=self.policy)
         new_curr_actions_tensor, new_log_pis = self._get_policy_actions(next_obs, num_actions=self.num_random, network=self.policy)
@@ -253,24 +252,24 @@ class CQLTrainer(TorchTrainer):
 
         if self.min_q_version == 3:
             # importance sammpled version
-            random_density = np.log(0.5 ** curr_actions_tensor.shape[-1])       # these actions are selected from a uniform random distribution (CQL paper, pg 29)
+            random_density = np.log(0.5 ** curr_actions_tensor.shape[-1])
             cat_q1 = torch.cat(
-                [q1_rand - random_density, q1_next_actions - new_log_pis.detach(), q1_curr_actions - curr_log_pis.detach()], 1              # want either low q value, or high log likelihood for max entropy
+                [q1_rand - random_density, q1_next_actions - new_log_pis.detach(), q1_curr_actions - curr_log_pis.detach()], 1
             )
             cat_q2 = torch.cat(
                 [q2_rand - random_density, q2_next_actions - new_log_pis.detach(), q2_curr_actions - curr_log_pis.detach()], 1
             )
             
-        min_qf1_loss = torch.logsumexp(cat_q1 / self.temp, dim=1,).mean() * self.min_q_weight * self.temp   # see (CQL paper, pg 29)
+        min_qf1_loss = torch.logsumexp(cat_q1 / self.temp, dim=1,).mean() * self.min_q_weight * self.temp
         min_qf2_loss = torch.logsumexp(cat_q2 / self.temp, dim=1,).mean() * self.min_q_weight * self.temp
                     
-        """Subtract the log likelihood of data (for a more tight lower bound)"""                            # second sub-part of the first part of equation 4, CQL paper
+        """Subtract the log likelihood of data"""
         min_qf1_loss = min_qf1_loss - q1_pred.mean() * self.min_q_weight
         min_qf2_loss = min_qf2_loss - q2_pred.mean() * self.min_q_weight
         
         if self.with_lagrange:
             alpha_prime = torch.clamp(self.log_alpha_prime.exp(), min=0.0, max=1000000.0)
-            min_qf1_loss = alpha_prime * (min_qf1_loss - self.target_action_gap)            # subtract from baseline, shouldn't change optimizationr result
+            min_qf1_loss = alpha_prime * (min_qf1_loss - self.target_action_gap)
             min_qf2_loss = alpha_prime * (min_qf2_loss - self.target_action_gap)
 
             self.alpha_prime_optimizer.zero_grad()
@@ -278,7 +277,7 @@ class CQLTrainer(TorchTrainer):
             alpha_prime_loss.backward(retain_graph=True)
             self.alpha_prime_optimizer.step()
 
-        qf1_loss = qf1_loss + min_qf1_loss                                              # add conservative penalty to QF loss
+        qf1_loss = qf1_loss + min_qf1_loss
         qf2_loss = qf2_loss + min_qf2_loss
 
         """

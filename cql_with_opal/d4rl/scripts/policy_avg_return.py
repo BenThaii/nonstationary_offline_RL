@@ -1,3 +1,4 @@
+import rlkit
 from rlkit.samplers.rollout_functions import rollout, multitask_rollout
 from rlkit.torch.pytorch_util import set_gpu_mode
 import argparse
@@ -12,6 +13,7 @@ def get_policy_average_returns(args):
     policy = data['evaluation/policy']
     # env = data['evaluation/env']
     env = gym.make('antmaze-medium-play-v0')
+    env.seed(100)
 
     print("Policy loaded")
 
@@ -24,7 +26,7 @@ def get_policy_average_returns(args):
         path = rollout(
                 env,
                 policy)
-        print(path['rewards'])
+        # print(path['rewards'])
         eval_paths.append(path)
     
     logger.record_dict(
@@ -35,7 +37,7 @@ def get_policy_average_returns(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--file', type=str, default="model_to_evaluate/itr_0.pkl",
+    parser.add_argument('--file', type=str, default="model_to_evaluate/itr_2700.pkl",
                         help='path to the snapshot file')
 
     parser.add_argument('--gpu', action='store_true', default=True)       # set to true if this argument is encountered

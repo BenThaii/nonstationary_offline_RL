@@ -8,9 +8,18 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "examples/cql_mujoco_new.py",
+            "program": "examples/cql_antmaze_new.py",
+            "args": [
+                "--env=antmaze-medium-diverse-v0", 
+                "--policy_lr=1e-4",
+                "--seed=10", 
+                "--lagrange_thresh=5.0",
+                "--min_q_weight=5.0", 
+                "--gpu=0",
+                "--min_q_version=3"
+                ],
             // "program": "scripts/run_policy.py",
-            // "args":["--file=model_to_evaluate/itr_2400.pkl"],
+            // "args":["--file=model_to_evaluate/itr_2700.pkl", "--gpu"],
             "console": "integratedTerminal"
         }
     ]

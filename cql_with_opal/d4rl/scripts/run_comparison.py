@@ -35,8 +35,8 @@ method_names = []
 
 
 
-# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-play-v0-myfix-lagrange-5-20211124-2140/CQL_offline_mujoco_runs/antmaze-medium-play-v0_20211124_2140_2021_11_24_21_40_42_0000--s-0")
-# method_names.append("antmaze myfix new lagrange = 5")
+method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-play-v0-myfix-lagrange-5-20211124-2140/CQL_offline_mujoco_runs/antmaze-medium-play-v0_20211124_2140_2021_11_24_21_40_42_0000--s-0")
+method_names.append("antmaze myfix new lagrange = 5")
 
 # method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-myfix-lagrange-neg1-20211123-2316/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20211123_2316_2021_11_23_23_16_02_0000--s-0")
 # method_names.append("antmaze myfix")
@@ -170,12 +170,12 @@ method_names = []
 # method_names.append("cql_monitor_cqlalpha, lagrange = 5")
 
 
-method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20220109-1139-terminated/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20220109_1139_2022_01_09_11_39_18_0000--s-0")
-method_names.append("cql_opal, unshuffled, monitor_cqlalpha, lagrange = 5")
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20220109-1139-terminated/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20220109_1139_2022_01_09_11_39_18_0000--s-0")
+# method_names.append("cql_opal, unshuffled, monitor_cqlalpha, lagrange = 5")
 
 
-method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20220110-1052-terminated/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20220110_1052_2022_01_10_10_52_53_0000--s-0")
-method_names.append("cql_opal, unshuffled, all loss, lagrange = 5, max_length 2000")
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20220110-1052-terminated/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20220110_1052_2022_01_10_10_52_53_0000--s-0")
+# method_names.append("cql_opal, unshuffled, all loss, lagrange = 5, max_length 2000")
 
 assert(len(method_dirs) == len(method_names))
 progress_file_name = "progress.csv"

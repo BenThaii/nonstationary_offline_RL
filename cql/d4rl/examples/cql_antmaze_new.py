@@ -4,9 +4,13 @@ from rlkit.envs.wrappers import NormalizedBoxEnv
 from rlkit.launchers.launcher_util import setup_logger
 from rlkit.samplers.data_collector import MdpPathCollector, CustomMDPPathCollector
 from rlkit.torch.sac.policies import TanhGaussianPolicy, MakeDeterministic
-from rlkit.torch.sac.cql import CQLTrainer
+# from rlkit.torch.sac.cql import CQLTrainer
+# from rlkit.torch.sac.cql_myfix import CQLTrainer
+from rlkit.torch.sac.cql_policy_update_first_contributor import CQLTrainer
 from rlkit.torch.networks import FlattenMlp
 from rlkit.torch.torch_rl_algorithm import TorchBatchRLAlgorithm
+from datetime import datetime
+
 
 import argparse, os
 import numpy as np
@@ -169,7 +173,7 @@ if __name__ == "__main__":
     parser.add_argument('--seed', default=10, type=int)
 
     args = parser.parse_args()
-    # enable_gpus(args.gpu)
+    enable_gpus(args.gpu)
     variant['trainer_kwargs']['max_q_backup'] = (True if args.max_q_backup == 'True' else False)
     variant['trainer_kwargs']['deterministic_backup'] = (True if args.deterministic_backup == 'True' else False)
     variant['trainer_kwargs']['min_q_weight'] = args.min_q_weight
@@ -188,6 +192,8 @@ if __name__ == "__main__":
     variant['seed'] = args.seed
 
     rnd = np.random.randint(0, 1000000)
-    setup_logger(os.path.join('CQL_offline_antmaze_runs', str(rnd)), variant=variant, base_log_dir='./data')
-    # ptu.set_gpu_mode(True)
+    start_time = datetime.now().strftime("%Y%m%d_%H%M") # current date and time
+    setup_logger(os.path.join('CQL_offline_mujoco_runs', args.env + "_" + start_time), snapshot_mode="gap", snapshot_gap= 300, variant=variant, 
+                                    base_log_dir='/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/')
+    ptu.set_gpu_mode(True)
     experiment(variant)
