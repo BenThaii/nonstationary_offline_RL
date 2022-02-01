@@ -4,7 +4,7 @@ from rlkit.envs.wrappers import NormalizedBoxEnv
 from rlkit.launchers.launcher_util import setup_logger
 from rlkit.samplers.data_collector import MdpPathCollector, CustomMDPPathCollector
 from rlkit.torch.sac.policies import TanhGaussianPolicy, MakeDeterministic
-from rlkit.torch.pad.networks import EncodedQF, EncodedTanhGaussianPolicy
+from rlkit.torch.pad.networks import EncodedQF, EncodedTanhGaussianPolicy, MdpPathCollector_pad, CustomMDPPathCollector_pad
 # from rlkit.torch.sac.cql import CQLTrainer
 # from rlkit.torch.sac.cql_myfix import CQLTrainer
 # from rlkit.torch.sac.cql_policy_update_first_contributor import CQLTrainer
@@ -47,81 +47,58 @@ def experiment(variant):
     state_encoder = Mlp(
         input_size=obs_dim,
         output_size=encoder_feature_dim,
-        hidden_sizes=encoder_hidden_sizes,
+        hidden_sizes=[],
     )
     inv_network = FlattenMlp(
         input_size= 2 * encoder_feature_dim,        #for both current, and next observation
         output_size= action_dim, 
-        hidden_sizes= [M,M,M], 
+        hidden_sizes= [], 
     )
     qf1 = EncodedQF(
         action_size = action_dim,
         output_size = 1,
-        hidden_sizes=[M,M,M],
+        hidden_sizes=[M,M],
         encoder = state_encoder,
     )
     qf2 = EncodedQF(
         action_size = action_dim,
         output_size = 1,
-        hidden_sizes=[M,M,M],
+        hidden_sizes=[M,M],
         encoder = state_encoder,
     )
     target_qf1 = EncodedQF(
         action_size = action_dim,
         output_size = 1,
-        hidden_sizes=[M,M,M],
+        hidden_sizes=[M,M],
         encoder = state_encoder,
     )
     target_qf2 = EncodedQF(
         action_size = action_dim,
         output_size = 1,
-        hidden_sizes=[M,M,M],
+        hidden_sizes=[M,M],
         encoder = state_encoder,
     )
     policy = EncodedTanhGaussianPolicy(
         obs_dim=obs_dim,
         action_dim=action_dim,
-        hidden_sizes=[M, M, M], 
+        hidden_sizes=[M, M], 
         encoder = state_encoder,
-        inv_network = inv_network
+        inv_network = inv_network,
+        encoder_lr= variant['encoder_lr'],
+        inv_lr= variant['inv_lr']
     )
-
-    
-    # qf1 = FlattenMlp(
-    #     input_size=obs_dim + action_dim,
-    #     output_size=1,
-    #     hidden_sizes=[M, M, M],
-    # )
-    # qf2 = FlattenMlp(
-    #     input_size=obs_dim + action_dim,
-    #     output_size=1,
-    #     hidden_sizes=[M, M, M],
-    # )
-    # target_qf1 = FlattenMlp(
-    #     input_size=obs_dim + action_dim,
-    #     output_size=1,
-    #     hidden_sizes=[M, M, M],
-    # )
-    # target_qf2 = FlattenMlp(
-    #     input_size=obs_dim + action_dim,
-    #     output_size=1,
-    #     hidden_sizes=[M, M, M],
-    # )
-    # # tanh Gaussian policy is just a Gaussian policy , whose selected action is squashed through a tanh
-    # policy = TanhGaussianPolicy(
-    #     obs_dim=obs_dim,
-    #     action_dim=action_dim,
-    #     hidden_sizes=[M, M, M], 
-    # )
-
 
     eval_policy = MakeDeterministic(policy)
-    eval_path_collector = MdpPathCollector(
-        eval_env,
-        eval_policy,
+    eval_path_collector = MdpPathCollector_pad(
+        env=eval_env,
+        policy=eval_policy,
+        use_pad=variant['trainer_kwargs']['use_pad_inv_loss']
     )
-    expl_path_collector = CustomMDPPathCollector(
-        eval_env,
+    expl_path_collector = CustomMDPPathCollector_pad(
+        env=eval_env,
+        policy=policy,
+        qf=qf1,
+        use_pad=variant['trainer_kwargs']['use_pad_inv_loss']
     )
     buffer_filename = None
     if variant['buffer_filename'] is not None:
@@ -178,7 +155,7 @@ if __name__ == "__main__":
         env_name='Hopper-v2',
         sparse_reward=False,
         algorithm_kwargs=dict(
-            num_epochs=3000,
+            num_epochs=3001,
             num_eval_steps_per_epoch=1000,
             num_trains_per_train_loop=1000,  
             num_expl_steps_per_train_loop=1000,
@@ -186,6 +163,9 @@ if __name__ == "__main__":
             max_path_length=1000,
             batch_size=256,
         ),
+        #PAD,
+        encoder_lr = 1e-5,
+        inv_lr = 1e-5,
         trainer_kwargs=dict(
             discount=0.99,
             soft_target_tau=5e-3,
@@ -211,6 +191,10 @@ if __name__ == "__main__":
             num_random=10,
             max_q_backup=False,
             deterministic_backup=False,
+
+            # PAD:
+            use_pad_inv_loss = True,
+            inv_loss_start = 100000,
         ),
     )
     

@@ -50,10 +50,8 @@ class CQLTrainer(TorchTrainer):
             lagrange_thresh=0.0,
 
             # PAD
-            inv_network = None,
             use_pad_inv_loss = True,
-            encoder_lr = 1e-4,
-            ss_lr = 1e-4,
+            inv_loss_start=40000,
     ):
         super().__init__()
         self.env = env
@@ -134,16 +132,7 @@ class CQLTrainer(TorchTrainer):
 
         # pad
         self.use_pad_inv_loss = use_pad_inv_loss
-        self.state_encoder = self.policy.encoder    #note: encoder is shared between policy and all qf's
-        self.inv_network = self.policy.inv_network
-
-        if use_pad_inv_loss:
-            self.encoder_optimizer =  torch.optim.Adam(
-                self.state_encoder.parameters(), lr=encoder_lr
-            )
-            self.inv_optimizer =  torch.optim.Adam(
-                self.inv_network.parameters(), lr=ss_lr
-            )
+        self.inv_loss_start = inv_loss_start
 
     def _get_tensor_values(self, obs, actions, network=None):
         action_shape = actions.shape[0]
@@ -330,19 +319,9 @@ class CQLTrainer(TorchTrainer):
             )
 
         """Inverse Dynamics Updates"""
-        if self.use_pad_inv_loss:
-            h = self.state_encoder(obs)
-            h_next = self.state_encoder(next_obs)
+        if self.use_pad_inv_loss and self._current_epoch > self.inv_loss_start:
+            inv_loss = self.policy.update_inv(obs, next_obs, actions)
 
-            pred_actions = self.inv_network(h, h_next)
-            inv_loss = F.mse_loss(pred_actions, actions)
-
-            self.encoder_optimizer.zero_grad()
-            self.inv_optimizer.zero_grad()
-            inv_loss.backward()
-
-            self.encoder_optimizer.step()
-            self.inv_optimizer.step()
             
 
         """
@@ -441,8 +420,12 @@ class CQLTrainer(TorchTrainer):
                 self.eval_statistics['threshold action gap'] = self.target_action_gap
                 self.eval_statistics['alpha prime loss'] = alpha_prime_loss.item()
             if self.use_pad_inv_loss:
-                self.eval_statistics['self-supervised inv loss'] = inv_loss.item()
+                if self._current_epoch > self.inv_loss_start:
+                    self.eval_statistics['self-supervised inv loss'] = inv_loss
+                else:
+                    self.eval_statistics['self-supervised inv loss'] = 0
         self._n_train_steps_total += 1
+
 
     def get_diagnostics(self):
         return self.eval_statistics

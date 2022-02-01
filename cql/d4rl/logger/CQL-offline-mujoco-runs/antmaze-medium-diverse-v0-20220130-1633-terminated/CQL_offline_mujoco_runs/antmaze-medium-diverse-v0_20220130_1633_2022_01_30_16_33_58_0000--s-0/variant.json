@@ -4,15 +4,17 @@
     "batch_size": 256,
     "max_path_length": 1000,
     "min_num_steps_before_training": 1000,
-    "num_epochs": 3000,
+    "num_epochs": 3001,
     "num_eval_steps_per_epoch": 1000,
     "num_expl_steps_per_train_loop": 1000,
     "num_trains_per_train_loop": 1000
   },
   "buffer_filename": null,
   "encoder_feature_dim": 256,
+  "encoder_lr": 0.0001,
   "encoder_num_layers": 3,
   "env_name": "antmaze-medium-diverse-v0",
+  "inv_lr": 0.0001,
   "layer_size": 256,
   "load_buffer": true,
   "replay_buffer_size": 2000000,
@@ -34,6 +36,7 @@
     "soft_target_tau": 0.005,
     "temp": 1.0,
     "use_automatic_entropy_tuning": true,
+    "use_pad_inv_loss": true,
     "with_lagrange": true
   },
   "version": "normal"
