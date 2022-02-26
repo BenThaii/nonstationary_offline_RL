@@ -132,14 +132,19 @@ dmypy.json
 *.pkl
 *.npy
 *.pt
+*.xlsx
 
 # training log for unsupervised opal
 opal_modified/gp_aa_experiments/*
 
 # training lof for cql_with_opal
 cql_with_opal/d4rl/logger/*
+cql/d4rl/logger/*
 
 # model to evaluate and opal_primitive network
 cql_with_opal/d4rl/model_to_evaluate/*
 cql_with_opal/d4rl/opal_primitive/*
+
+cql/d4rl/model_to_evaluate/*
+
 

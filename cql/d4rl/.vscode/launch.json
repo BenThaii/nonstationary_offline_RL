@@ -8,18 +8,42 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "examples/cql_antmaze_new_pad.py",
-            "args": [
-                "--env=antmaze-medium-diverse-v0", 
-                "--policy_lr=1e-4",
-                "--seed=10", 
-                "--lagrange_thresh=5.0",
-                "--min_q_weight=5.0", 
-                "--gpu=0",
-                "--min_q_version=3"
-                ],
+            // "program": "examples/cql_antmaze_new_pad.py",
+            // "args": [
+            //     "--env=halfcheetah-expert-v2", 
+            //     "--policy_lr=1e-4",
+            //     "--seed=10", 
+            //     "--lagrange_thresh=5.0",
+            //     "--min_q_weight=5.0", 
+            //     "--gpu=0",
+            //     "--min_q_version=3"
+            //     ],
+            
+            // ///////////////////RENDERING PERFORMANCES
             // "program": "scripts/run_policy.py",
-            // "args":["--file=model_to_evaluate/itr_2700.pkl", "--gpu"],
+            // "args":["--file=model_to_evaluate/itr_3000_vanilla.pkl", "--gpu"],
+            
+            // "program": "scripts/run_policy_pad.py",
+            // "args":["--file=model_to_evaluate/itr_3000_vanilla.pkl", "--gpu"],
+
+            // "program": "scripts/run_policy_pad.py",
+            // "args":["--file=model_to_evaluate/itr_3000_pad.pkl", "--gpu"],
+
+            // "program": "scripts/run_policy_pad.py",
+            // "args":["--file=model_to_evaluate/itr_3000_pad.pkl", "--gpu", "--use_pad"],
+            
+
+            // /////////////////// EVALUATING AVERAGE RETURNS
+            "program": "scripts/policy_avg_return_pad.py",
+            "args":["--file=model_to_evaluate/vanilla/itr_3000.pkl", "--gpu"],
+
+            // "program": "scripts/policy_avg_return_pad.py",
+            // "args":["--file=model_to_evaluate/pad/itr_3000.pkl", "--gpu"],
+
+            // "program": "scripts/policy_avg_return_pad.py",
+            // "args":["--file=model_to_evaluate/pad/itr_3000.pkl", "--gpu", "--use_pad"],
+
+            // "program": "scripts/comparison_policy_multi_epoch_pad.py",
             "console": "integratedTerminal"
         }
     ]

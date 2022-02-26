@@ -82,6 +82,12 @@ class CQLTrainer(TorchTrainer):
                 [self.log_alpha_prime],
                 lr=qf_lr,
             )
+            self.log_alpha_prime_2 = ptu.zeros(1, requires_grad=True)
+            self.alpha_prime_optimizer_2 = optimizer_class(
+                [self.log_alpha_prime_2],
+                lr=qf_lr,
+            )
+
 
         self.plotter = plotter
         self.render_eval_paths = render_eval_paths
@@ -278,12 +284,16 @@ class CQLTrainer(TorchTrainer):
         if self.with_lagrange:
             alpha_prime = torch.clamp(self.log_alpha_prime.exp(), min=0.0, max=1000000.0)
             min_qf1_loss = alpha_prime * (min_qf1_loss - self.target_action_gap)            # subtract from baseline, shouldn't change optimizationr result
-            min_qf2_loss = alpha_prime * (min_qf2_loss - self.target_action_gap)
+
+            alpha_prime_2 = torch.clamp(self.log_alpha_prime_2.exp(), min=0.0, max=1000000.0)
+            min_qf2_loss = alpha_prime_2 * (min_qf2_loss - self.target_action_gap)
 
             self.alpha_prime_optimizer.zero_grad()
+            self.alpha_prime_optimizer_2.zero_grad()
             alpha_prime_loss = (-min_qf1_loss - min_qf2_loss)*0.5 
             alpha_prime_loss.backward(retain_graph=True)
             self.alpha_prime_optimizer.step()
+            self.alpha_prime_optimizer_2.step()
 
         qf1_loss = qf1_loss + min_qf1_loss                                              # add conservative penalty to QF loss
         qf2_loss = qf2_loss + min_qf2_loss
@@ -310,27 +320,13 @@ class CQLTrainer(TorchTrainer):
         """
         Soft Updates
         """
-        # # PAD: only update the Q functions
-        # ptu.soft_update_from_to(
-        #     self.qf1.qf, self.target_qf1.qf, self.soft_target_tau
-        # )
-        # if self.num_qs > 1:
-        #     ptu.soft_update_from_to(
-        #         self.qf2, self.target_qf2, self.soft_target_tau
-        #     )
-        
-        # # PAD:
-        # ptu.soft_update_from_to(
-        #     self.qf1.encoder, self.target_qf1.encoder, self.soft_target_tau
-        # )
-
         # PAD: only update the Q functions
         ptu.soft_update_from_to(
             self.qf1.qf, self.target_qf1.qf, self.soft_target_tau
         )
         if self.num_qs > 1:
             ptu.soft_update_from_to(
-                self.qf2.qf, self.target_qf2.qf, self.soft_target_tau
+                self.qf2, self.target_qf2, self.soft_target_tau
             )
         
         # PAD:
@@ -435,6 +431,7 @@ class CQLTrainer(TorchTrainer):
             
             if self.with_lagrange:
                 self.eval_statistics['Alpha_prime'] = alpha_prime.item()
+                self.eval_statistics['Alpha_prime 2'] = alpha_prime_2.item()
                 self.eval_statistics['min_q1_loss'] = ptu.get_numpy(min_qf1_loss).mean()
                 self.eval_statistics['min_q2_loss'] = ptu.get_numpy(min_qf2_loss).mean()
                 self.eval_statistics['threshold action gap'] = self.target_action_gap

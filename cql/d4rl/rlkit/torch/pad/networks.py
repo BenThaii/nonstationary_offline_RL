@@ -13,10 +13,11 @@ from rlkit.samplers.rollout_functions import rollout, function_rollout
 
 
 
-class EncodedQF(FlattenMlp):
+class EncodedQF(nn.Module):
     def __init__(self, action_size, output_size, hidden_sizes, encoder = None):
+        super().__init__()
         encoder_output_size = encoder.output_size
-        super().__init__(
+        self.qf = FlattenMlp(
             input_size= encoder_output_size + action_size, 
             output_size=output_size, 
             hidden_sizes=hidden_sizes,
@@ -27,7 +28,25 @@ class EncodedQF(FlattenMlp):
             encoded_obs = self.encoder(obs)
         else:
             encoded_obs = obs
-        return super().forward(encoded_obs, actions, **kwargs)
+        
+        return self.qf(encoded_obs, actions, **kwargs)
+
+# class EncodedQF(FlattenMlp):
+#     def __init__(self, action_size, output_size, hidden_sizes, encoder = None):
+#         encoder_output_size = encoder.output_size
+#         super().__init__(
+#             input_size= encoder_output_size + action_size, 
+#             output_size=output_size, 
+#             hidden_sizes=hidden_sizes,
+#         )
+#         self.encoder = encoder
+#     def forward(self, obs, actions, **kwargs):
+#         if self.encoder:
+#             encoded_obs = self.encoder(obs)
+#         else:
+#             encoded_obs = obs
+#         return super().forward(encoded_obs, actions, **kwargs)
+
 
 
 class EncodedTanhGaussianPolicy(TanhGaussianPolicy):
@@ -86,7 +105,68 @@ class EncodedTanhGaussianPolicy(TanhGaussianPolicy):
 
         # b = self.encoder.fc0.weight.data.clone()
         return inv_loss.item()
+
+
+# class EncodedTanhGaussianPolicy(nn.Module):
+#     def __init__(self, 
+#             obs_dim, action_dim, hidden_sizes, 
+#             encoder= None, 
+#             inv_network = None, 
+#             encoder_lr = 1e-4,
+#             inv_lr = 1e-4,
+#         ):
+#         super().__init__()
+#         encoder_output_size = encoder.output_size
+#         self.policy = TanhGaussianPolicy(
+#             obs_dim = encoder_output_size,
+#             action_dim = action_dim,
+#             hidden_sizes = hidden_sizes
+#         )
+#         self.encoder = encoder
+#         self.inv_network = inv_network
+
+#         # optimizers
+#         self.encoder_optimizer =  torch.optim.Adam(
+#             self.encoder.parameters(), lr=encoder_lr
+#         )
+#         self.inv_optimizer =  torch.optim.Adam(
+#             self.inv_network.parameters(), lr=inv_lr
+#         )
+
+#     def forward(self, obs, **kwargs):
+#         if self.encoder:
+#             encoded_obs = self.encoder(obs)
+#         else:
+#             encoded_obs = obs
+#         return self.policy(encoded_obs, **kwargs)
+
+#     def log_prob(self, obs, actions):
+#         if self.encoder:
+#             encoded_obs = self.encoder(obs)
+#         else:
+#             encoded_obs = obs
+#         return self.policy.log_prob(encoded_obs, actions)
     
+#     def update_inv(self, obs, next_obs, actions):
+#         h = self.encoder(obs)
+#         h_next = self.encoder(next_obs)
+
+#         pred_actions = self.inv_network(h, h_next)
+#         inv_loss = F.mse_loss(pred_actions, actions)
+
+#         self.encoder_optimizer.zero_grad()
+#         self.inv_optimizer.zero_grad()
+#         inv_loss.backward()
+
+        
+#         self.encoder_optimizer.step()
+#         self.inv_optimizer.step()
+
+#         # b = self.encoder.fc0.weight.data.clone()
+#         return inv_loss.item()
+    
+
+
 
 
 
@@ -262,6 +342,134 @@ def expl_rollout_pad(
         terminals=np.array(terminals).reshape(-1, 1),
         env_infos=env_infos,
     )
+
+
+def nonstationary_rollout_pad(
+        env,
+        agent,
+        use_pad,
+        hasVariation = True,
+        variation_attribute = 'gravity',
+        # variation_type = 'linear-decrease',
+        variation_type = 'linear-increase',
+        variation_amplitude = 20, 
+        max_path_length=np.inf,
+        render=False,
+        render_kwargs=None,
+):
+    """
+    The following value for the following keys will be a 2D array, with the
+    first dimension corresponding to the time dimension.
+     - observations
+     - actions
+     - rewards
+     - next_observations
+     - terminals
+
+    The next two elements will be lists of dictionaries, with the index into
+    the list being the index into the time
+     - agent_infos
+     - env_infos
+    """
+    if render_kwargs is None:
+        render_kwargs = {}
+    observations = []
+    actions = []
+    rewards = []
+    terminals = []
+    agent_infos = []
+    env_infos = []
+    o = env.reset()
+    agent.reset()
+    next_o = None
+    path_length = 0
+
+    if hasVariation:
+        # saving initial parameter value
+        if variation_attribute == 'gravity':
+            initial_gravity = env.model.opt.gravity[2]
+        elif variation_attribute == 'dof_friction':
+            initial_friction = env.model.dof_frictionloss.copy()
+        
+
+        if 'linear' in variation_type:
+            # increment = variation_amplitude/max_path_length
+            increment = variation_amplitude/env._max_episode_steps
+
+    if render:
+        env.render(**render_kwargs)
+    while path_length < max_path_length:
+        a, agent_info = agent.get_action(o)
+        next_o, r, d, env_info = env.step(a)
+        if hasVariation:
+            if variation_attribute == 'gravity':
+                # print(env.model.opt.gravity[2])
+                if variation_type == "linear-increase":
+                    # negative because gravity points down
+                    env.model.opt.gravity[2] -= increment
+                elif variation_type == "linear-decrease":
+                    # negative because gravity points down
+                    env.model.opt.gravity[2] += increment
+            elif variation_attribute == 'dof_friction':
+                # print(env.model.opt.gravity[2])
+                if variation_type == "linear-increase":
+                    for i in range(len(env.model.dof_frictionloss)):
+                        env.model.dof_frictionloss[i] += increment
+                elif variation_type == "linear-decrease":
+                    for i in range(len(env.model.dof_frictionloss)):
+                        env.model.dof_frictionloss[i] -= increment
+
+        if use_pad:         # PAD
+            o_torch = torch.FloatTensor(o[None]).to(ptu.device)
+            next_o_torch = torch.FloatTensor(next_o[None]).to(ptu.device)
+            a_torch = torch.FloatTensor(a[None]).to(ptu.device)
+            agent.stochastic_policy.update_inv(o_torch, next_o_torch, a_torch)  
+
+        observations.append(o)
+        rewards.append(r)
+        terminals.append(d)
+        actions.append(a)
+        agent_infos.append(agent_info)
+        env_infos.append(env_info)
+        path_length += 1
+        if d:
+            break
+        o = next_o
+        if render:
+            env.render(**render_kwargs)
+
+    if hasVariation:
+        # resetting parameter values
+        if variation_attribute == 'gravity':
+            env.model.opt.gravity[2] = initial_gravity
+        elif variation_attribute == 'dof_friction':
+            for i in range(len(env.model.dof_frictionloss)):
+                env.model.dof_frictionloss[i] = initial_friction[i]
+    
+
+    actions = np.array(actions)
+    if len(actions.shape) == 1:
+        actions = np.expand_dims(actions, 1)
+    observations = np.array(observations)
+    if len(observations.shape) == 1:
+        observations = np.expand_dims(observations, 1)
+        next_o = np.array([next_o])
+    next_observations = np.vstack(
+        (
+            observations[1:, :],
+            np.expand_dims(next_o, 0)
+        )
+    )
+    return dict(
+        observations=observations,
+        actions=actions,
+        rewards=np.array(rewards).reshape(-1, 1),
+        next_observations=next_observations,
+        terminals=np.array(terminals).reshape(-1, 1),
+        agent_infos=agent_infos,
+        env_infos=env_infos,
+    )
+
 
 
 

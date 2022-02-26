@@ -52,6 +52,10 @@ class CQLTrainer(TorchTrainer):
             # PAD
             use_pad_inv_loss = True,
             inv_loss_start=40000,
+            encoder_update_interval = 10,            
+            encoder_qfunc_policy_gap = 5,   
+            encoder_lr = 1e-4,
+            
     ):
         super().__init__()
         self.env = env
@@ -89,18 +93,45 @@ class CQLTrainer(TorchTrainer):
         self.qf_criterion = nn.MSELoss()
         self.vf_criterion = nn.MSELoss()
 
+        self.encoder_optimizer = optimizer_class(
+            self.qf1.encoder.parameters(),
+            lr=encoder_lr,
+        )
+
+        for param in self.qf1.encoder.parameters():
+            param.requires_grad = False
+
+        # these optimizers do not change the encoder weights
         self.policy_optimizer = optimizer_class(
-            self.policy.parameters(),
+            filter(lambda p: p.requires_grad, self.policy.parameters()),
             lr=policy_lr,
         )
         self.qf1_optimizer = optimizer_class(
-            self.qf1.parameters(),
+            filter(lambda p: p.requires_grad, self.qf1.parameters()),
             lr=qf_lr,
         )
         self.qf2_optimizer = optimizer_class(
-            self.qf2.parameters(),
+            filter(lambda p: p.requires_grad, self.qf2.parameters()),
             lr=qf_lr,
         )
+
+        for param in self.qf1.encoder.parameters():
+            param.requires_grad = True
+        
+
+
+        # self.policy_optimizer = optimizer_class(
+        #     self.policy.parameters(),
+        #     lr=policy_lr,
+        # )
+        # self.qf1_optimizer = optimizer_class(
+        #     self.qf1.parameters(),
+        #     lr=qf_lr,
+        # )
+        # self.qf2_optimizer = optimizer_class(
+        #     self.qf2.parameters(),
+        #     lr=qf_lr,
+        # )
 
         self.discount = discount
         self.reward_scale = reward_scale
@@ -133,6 +164,8 @@ class CQLTrainer(TorchTrainer):
         # pad
         self.use_pad_inv_loss = use_pad_inv_loss
         self.inv_loss_start = inv_loss_start
+        self.encoder_update_interval = encoder_update_interval          
+        self.encoder_qfunc_policy_gap = encoder_qfunc_policy_gap 
 
     def _get_tensor_values(self, obs, actions, network=None):
         action_shape = actions.shape[0]
@@ -292,6 +325,11 @@ class CQLTrainer(TorchTrainer):
         Update networks
         """
         # Update the Q-functions iff 
+        if self._current_epoch % self.encoder_update_interval == 0:
+            # update encoder using qf loss
+            self.encoder_optimizer.zero_grad()
+
+
         self._num_q_update_steps += 1
         self.qf1_optimizer.zero_grad()
         qf1_loss.backward(retain_graph=True)
@@ -301,11 +339,23 @@ class CQLTrainer(TorchTrainer):
             self.qf2_optimizer.zero_grad()
             qf2_loss.backward(retain_graph=True)
             self.qf2_optimizer.step()
+        if self._current_epoch % self.encoder_update_interval == 0:
+            # update encoder using qf loss
+            self.encoder_optimizer.step()
+
+        
+        if (self._current_epoch + self.encoder_qfunc_policy_gap) % self.encoder_update_interval == 0:
+            # update encoder using policy loss
+            self.encoder_optimizer.zero_grad()
 
         self._num_policy_update_steps += 1
         self.policy_optimizer.zero_grad()
         policy_loss.backward(retain_graph=False)
         self.policy_optimizer.step()
+
+        if (self._current_epoch + self.encoder_qfunc_policy_gap) % self.encoder_update_interval == 0:
+            # update encoder using policy loss
+            self.encoder_optimizer.step()
 
         """
         Soft Updates
@@ -334,9 +384,11 @@ class CQLTrainer(TorchTrainer):
             )
         
         # PAD:
-        ptu.soft_update_from_to(
-            self.qf1.encoder, self.target_qf1.encoder, self.soft_target_tau
-        )
+        if (self._current_epoch % self.encoder_update_interval == 0) or ((self._current_epoch + self.encoder_qfunc_policy_gap) % self.encoder_update_interval) == 0:
+            # soft update the encoder only when we performed the encoder update
+            ptu.soft_update_from_to(
+                self.qf1.encoder, self.target_qf1.encoder, self.soft_target_tau
+            )
 
         """Inverse Dynamics Updates"""
         if self.use_pad_inv_loss and self._current_epoch > self.inv_loss_start:

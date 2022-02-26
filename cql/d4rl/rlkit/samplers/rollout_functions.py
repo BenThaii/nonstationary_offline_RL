@@ -179,6 +179,10 @@ def nonstationary_rollout(
     agent_infos = []
     env_infos = []
     o = env.reset()
+    # for i in range(14):
+    #     env.model.dof_frictionloss[i] = 0.1
+    # env.model.opt.gravity[2] =0
+    # env.model.opt.gravity[2] =0
     agent.reset()
     next_o = None
     path_length = 0

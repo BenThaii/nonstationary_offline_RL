@@ -4,10 +4,14 @@ from rlkit.envs.wrappers import NormalizedBoxEnv
 from rlkit.launchers.launcher_util import setup_logger
 from rlkit.samplers.data_collector import MdpPathCollector, CustomMDPPathCollector
 from rlkit.torch.sac.policies import TanhGaussianPolicy, MakeDeterministic
-from rlkit.torch.sac.cql import CQLTraineruto
+from rlkit.torch.pad.networks import EncodedQF, EncodedTanhGaussianPolicy, MdpPathCollector_pad, CustomMDPPathCollector_pad
+# from rlkit.torch.sac.cql import CQLTrainer
 # from rlkit.torch.sac.cql_myfix import CQLTrainer
 # from rlkit.torch.sac.cql_policy_update_first_contributor import CQLTrainer
-from rlkit.torch.networks import FlattenMlp
+# from rlkit.torch.sac.cql_pad import CQLTrainer
+from rlkit.torch.sac.cql_pad_interval import CQLTrainer
+# from rlkit.torch.sac.cql_pad_v2 import CQLTrainer
+from rlkit.torch.networks import FlattenMlp, Mlp
 from rlkit.torch.torch_rl_algorithm import TorchBatchRLAlgorithm
 from datetime import datetime
 
@@ -17,6 +21,20 @@ import numpy as np
 
 import h5py
 import d4rl, gym
+
+from prettytable import PrettyTable
+
+def count_parameters(model):
+    table = PrettyTable(["Modules", "Parameters"])
+    total_params = 0
+    for name, parameter in model.named_parameters():
+        if not parameter.requires_grad: continue
+        param = parameter.numel()
+        table.add_row([name, param])
+        total_params+=param
+    print(table)
+    print(f"Total Trainable Params: {total_params}")
+    return total_params
 
 def load_hdf5(dataset, replay_buffer):
     replay_buffer._observations = dataset['observations']
@@ -37,39 +55,98 @@ def experiment(variant):
     action_dim = eval_env.action_space.low.size
 
     M = variant['layer_size']
-    qf1 = FlattenMlp(
-        input_size=obs_dim + action_dim,
-        output_size=1,
-        hidden_sizes=[M, M, M],
+    encoder_layer_size = variant['encoder_layer_size']
+    encoder_num_layers = variant['encoder_num_layers']
+    encoder_hidden_sizes = [encoder_layer_size for i in range(encoder_num_layers)]
+
+    inv_num_layers = variant['inv_num_layers']
+    inv_hidden_sizes = [M for i in range(inv_num_layers)]
+
+    cql_num_layers = variant['cql_num_layers']
+    cql_hidden_sizes = [M for i in range(cql_num_layers)]
+
+
+    encoder_feature_dim = variant['encoder_feature_dim']
+
+    # encoder_hidden_sizes = []
+    # inv_hidden_sizes = []
+    # cql_hidden_sizes = [M, M]
+
+    # encoder_hidden_sizes = [M, M, M, M]
+    # inv_hidden_sizes = [M, M, M, M]
+    # cql_hidden_sizes = [M, M, M, M, M]
+
+    
+
+    state_encoder = Mlp(
+        input_size=obs_dim,
+        output_size=encoder_feature_dim,
+        hidden_sizes= encoder_hidden_sizes,
     )
-    qf2 = FlattenMlp(
-        input_size=obs_dim + action_dim,
-        output_size=1,
-        hidden_sizes=[M, M, M],
+    state_encoder_target = Mlp(
+        input_size=obs_dim,
+        output_size=encoder_feature_dim,
+        hidden_sizes= encoder_hidden_sizes,
     )
-    target_qf1 = FlattenMlp(
-        input_size=obs_dim + action_dim,
-        output_size=1,
-        hidden_sizes=[M, M, M],
+    inv_network = FlattenMlp(
+        input_size= 2 * encoder_feature_dim,        #for both current, and next observation
+        output_size= action_dim, 
+        hidden_sizes= inv_hidden_sizes, 
     )
-    target_qf2 = FlattenMlp(
-        input_size=obs_dim + action_dim,
-        output_size=1,
-        hidden_sizes=[M, M, M],
+
+    qf1 = EncodedQF(
+        action_size = action_dim,
+        output_size = 1,
+        hidden_sizes=cql_hidden_sizes,
+        encoder = state_encoder,
     )
-    # tanh Gaussian policy is just a Gaussian policy , whose selected action is squashed through a tanh
-    policy = TanhGaussianPolicy(
+    qf2 = EncodedQF(
+        action_size = action_dim,
+        output_size = 1,
+        hidden_sizes=cql_hidden_sizes,
+        encoder = state_encoder,
+    )
+
+    # target Q-networks share the same encoder, standard Q-networks share another encoder that is also shared with the policy
+    target_qf1 = EncodedQF(
+        action_size = action_dim,
+        output_size = 1,
+        hidden_sizes=cql_hidden_sizes,
+        encoder = state_encoder_target,
+    )
+    target_qf2 = EncodedQF(
+        action_size = action_dim,
+        output_size = 1,
+        hidden_sizes=cql_hidden_sizes,
+        encoder = state_encoder_target,
+    )
+    target_qf1.load_state_dict(qf1.state_dict())
+    target_qf2.load_state_dict(qf2.state_dict())
+
+    policy = EncodedTanhGaussianPolicy(
         obs_dim=obs_dim,
         action_dim=action_dim,
-        hidden_sizes=[M, M, M], 
+        hidden_sizes=cql_hidden_sizes, 
+        encoder = state_encoder,
+        inv_network = inv_network,
+        encoder_lr= variant['encoder_lr'],
+        inv_lr= variant['inv_lr']
     )
+
+    print(count_parameters(policy) - count_parameters(policy.inv_network))
+
+
     eval_policy = MakeDeterministic(policy)
-    eval_path_collector = MdpPathCollector(
-        eval_env,
-        eval_policy,
+    eval_path_collector = MdpPathCollector_pad(
+        env=eval_env,
+        policy=eval_policy,
+        use_pad=variant['trainer_kwargs']['use_pad_inv_loss']
     )
-    expl_path_collector = CustomMDPPathCollector(
-        eval_env,
+    expl_path_collector = CustomMDPPathCollector_pad(
+        env=eval_env,
+        policy=policy,
+        qf=qf1,
+        use_pad=variant['trainer_kwargs']['use_pad_inv_loss']
     )
     buffer_filename = None
     if variant['buffer_filename'] is not None:
@@ -91,6 +168,7 @@ def experiment(variant):
         qf2=qf2,
         target_qf1=target_qf1,
         target_qf2=target_qf2,
+        encoder_lr = variant['encoder_lr'],
         **variant['trainer_kwargs']
     )
     algorithm = TorchBatchRLAlgorithm(
@@ -118,6 +196,12 @@ if __name__ == "__main__":
         algorithm="CQL",
         version="normal",
         layer_size=256,
+        encoder_layer_size=128,
+        encoder_feature_dim=256,
+        encoder_num_layers = 1,
+        cql_num_layers = 2,
+        inv_num_layers = 1,
+
         replay_buffer_size=int(2E6),
         buffer_filename=None,
         load_buffer=None,
@@ -132,6 +216,9 @@ if __name__ == "__main__":
             max_path_length=1000,
             batch_size=256,
         ),
+        #PAD,
+        encoder_lr = 1e-5,
+        inv_lr = 1e-5,
         trainer_kwargs=dict(
             discount=0.99,
             soft_target_tau=5e-3,
@@ -157,6 +244,12 @@ if __name__ == "__main__":
             num_random=10,
             max_q_backup=False,
             deterministic_backup=False,
+
+            # PAD:
+            use_pad_inv_loss = False,
+            inv_loss_start = 40000,
+            encoder_update_interval = 5,            
+            encoder_qfunc_policy_gap = 2,            
         ),
     )
     

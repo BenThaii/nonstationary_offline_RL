@@ -310,33 +310,15 @@ class CQLTrainer(TorchTrainer):
         """
         Soft Updates
         """
-        # # PAD: only update the Q functions
-        # ptu.soft_update_from_to(
-        #     self.qf1.qf, self.target_qf1.qf, self.soft_target_tau
-        # )
-        # if self.num_qs > 1:
-        #     ptu.soft_update_from_to(
-        #         self.qf2, self.target_qf2, self.soft_target_tau
-        #     )
-        
-        # # PAD:
-        # ptu.soft_update_from_to(
-        #     self.qf1.encoder, self.target_qf1.encoder, self.soft_target_tau
-        # )
 
         # PAD: only update the Q functions
         ptu.soft_update_from_to(
-            self.qf1.qf, self.target_qf1.qf, self.soft_target_tau
+            self.qf1, self.target_qf1, self.soft_target_tau
         )
         if self.num_qs > 1:
             ptu.soft_update_from_to(
-                self.qf2.qf, self.target_qf2.qf, self.soft_target_tau
+                self.qf2, self.target_qf2, self.soft_target_tau
             )
-        
-        # PAD:
-        ptu.soft_update_from_to(
-            self.qf1.encoder, self.target_qf1.encoder, self.soft_target_tau
-        )
 
         """Inverse Dynamics Updates"""
         if self.use_pad_inv_loss and self._current_epoch > self.inv_loss_start:
