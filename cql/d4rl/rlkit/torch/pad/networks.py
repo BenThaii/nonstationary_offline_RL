@@ -56,6 +56,7 @@ class EncodedTanhGaussianPolicy(TanhGaussianPolicy):
             inv_network = None, 
             encoder_lr = 1e-4,
             inv_lr = 1e-4,
+            inv_loss_type = 'mse'
         ):
         encoder_output_size = encoder.output_size
         super().__init__(
@@ -63,6 +64,8 @@ class EncodedTanhGaussianPolicy(TanhGaussianPolicy):
             action_dim = action_dim,
             hidden_sizes = hidden_sizes
         )
+        self.inv_loss_type = inv_loss_type
+        self.action_dim = action_dim
         self.encoder = encoder
         self.inv_network = inv_network
 
@@ -89,11 +92,34 @@ class EncodedTanhGaussianPolicy(TanhGaussianPolicy):
         return super().log_prob(encoded_obs, actions)
     
     def update_inv(self, obs, next_obs, actions):
-        h = self.encoder(obs)
-        h_next = self.encoder(next_obs)
+        if self.encoder:
+            h = self.encoder(obs)
+            h_next = self.encoder(next_obs)
+        else:
+            h = obs
+            h_next = next_obs
+        
+        try:
+            inv_loss_type = self.inv_loss_type
+        except: 
+            inv_loss_type = "mse"
+            
+        if inv_loss_type == "mse":
+            pred_actions = self.inv_network(h, h_next)
+            inv_loss = F.mse_loss(pred_actions, actions)
+        elif inv_loss_type == "variational":
+            # break the return of inv_network into 2 parts:
+            inv_return = self.inv_network(h, h_next)
+            mean = inv_return[:, :self.action_dim]
+            log_std = inv_return[:, self.action_dim:]
+            std = log_std.exp()
 
-        pred_actions = self.inv_network(h, h_next)
-        inv_loss = F.mse_loss(pred_actions, actions)
+            
+            act_dist = torch.distributions.Normal(mean, std)
+            log_prob = act_dist.log_prob(actions).sum(-1)					# calculate the log_prob of the actions (of both those selected, and those not selected). Sum of log_prob in log space is equivalent to product of prob in real space
+            inv_loss = -1 * log_prob.mean()
+        else:
+            raise Exception ('can only accept "mse" or "variational" inv_loss_type')
 
         self.encoder_optimizer.zero_grad()
         self.inv_optimizer.zero_grad()
@@ -352,10 +378,12 @@ def nonstationary_rollout_pad(
         variation_attribute = 'gravity',
         # variation_type = 'linear-decrease',
         variation_type = 'linear-increase',
-        variation_amplitude = 20, 
+        # variation_amplitude = 50, 
+        variation_amplitude = 30, 
         max_path_length=np.inf,
         render=False,
         render_kwargs=None,
+        inv_interval = 5,
 ):
     """
     The following value for the following keys will be a 2D array, with the
@@ -398,6 +426,10 @@ def nonstationary_rollout_pad(
 
     if render:
         env.render(**render_kwargs)
+
+    obs_buffer = []
+    next_obs_buffer = []
+    a_buffer = []
     while path_length < max_path_length:
         a, agent_info = agent.get_action(o)
         next_o, r, d, env_info = env.step(a)
@@ -410,6 +442,7 @@ def nonstationary_rollout_pad(
                 elif variation_type == "linear-decrease":
                     # negative because gravity points down
                     env.model.opt.gravity[2] += increment
+                # print(env.model.opt.gravity[2])
             elif variation_attribute == 'dof_friction':
                 # print(env.model.opt.gravity[2])
                 if variation_type == "linear-increase":
@@ -420,10 +453,28 @@ def nonstationary_rollout_pad(
                         env.model.dof_frictionloss[i] -= increment
 
         if use_pad:         # PAD
-            o_torch = torch.FloatTensor(o[None]).to(ptu.device)
-            next_o_torch = torch.FloatTensor(next_o[None]).to(ptu.device)
-            a_torch = torch.FloatTensor(a[None]).to(ptu.device)
-            agent.stochastic_policy.update_inv(o_torch, next_o_torch, a_torch)  
+            if path_length % inv_interval == 0:
+                obs_buffer.append(o)
+                next_obs_buffer.append(next_o)
+                a_buffer.append(a)
+
+                # o_torch = torch.FloatTensor(o[None]).to(ptu.device)
+                # next_o_torch = torch.FloatTensor(next_o[None]).to(ptu.device)
+                # a_torch = torch.FloatTensor(a[None]).to(ptu.device)
+
+                o_torch = torch.FloatTensor(obs_buffer).to(ptu.device)
+                next_o_torch = torch.FloatTensor(next_obs_buffer).to(ptu.device)
+                a_torch = torch.FloatTensor(a_buffer).to(ptu.device)
+
+                agent.stochastic_policy.update_inv(o_torch, next_o_torch, a_torch)  
+
+                obs_buffer = []
+                next_obs_buffer = []
+                a_buffer = []
+            else:
+                obs_buffer.append(o)
+                next_obs_buffer.append(next_o)
+                a_buffer.append(a)
 
         observations.append(o)
         rewards.append(r)

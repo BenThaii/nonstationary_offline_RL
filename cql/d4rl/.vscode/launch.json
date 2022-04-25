@@ -8,9 +8,9 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            // "program": "examples/cql_antmaze_new_pad.py",
+            // "program": "examples/cql_antmaze_new.py",
             // "args": [
-            //     "--env=halfcheetah-expert-v2", 
+            //     "--env=antmaze-medium-diverse-v0", 
             //     "--policy_lr=1e-4",
             //     "--seed=10", 
             //     "--lagrange_thresh=5.0",
@@ -20,8 +20,11 @@
             //     ],
             
             // ///////////////////RENDERING PERFORMANCES
-            // "program": "scripts/run_policy.py",
-            // "args":["--file=model_to_evaluate/itr_3000_vanilla.pkl", "--gpu"],
+            "program": "scripts/run_policy_pad.py",
+            // "args":["--file=model_to_evaluate/antmaze_vanilla_3000/itr_3000.pkl", "--gpu"],
+            // "args":["--file=model_to_evaluate/antmaze_pad_3000_mse/itr_3000.pkl", "--gpu"],
+            // "args":["--file=model_to_evaluate/cheetah_pad_3000_mse/itr_3000.pkl", "--gpu"],
+            "args":["--file=model_to_evaluate/cheetah_vanilla_3000/itr_3000.pkl", "--gpu"],
             
             // "program": "scripts/run_policy_pad.py",
             // "args":["--file=model_to_evaluate/itr_3000_vanilla.pkl", "--gpu"],
@@ -34,8 +37,8 @@
             
 
             // /////////////////// EVALUATING AVERAGE RETURNS
-            "program": "scripts/policy_avg_return_pad.py",
-            "args":["--file=model_to_evaluate/vanilla/itr_3000.pkl", "--gpu"],
+            // "program": "scripts/policy_avg_return_pad.py",
+            // "args":["--file=model_to_evaluate/vanilla/itr_3000.pkl", "--gpu"],
 
             // "program": "scripts/policy_avg_return_pad.py",
             // "args":["--file=model_to_evaluate/pad/itr_3000.pkl", "--gpu"],
@@ -43,7 +46,9 @@
             // "program": "scripts/policy_avg_return_pad.py",
             // "args":["--file=model_to_evaluate/pad/itr_3000.pkl", "--gpu", "--use_pad"],
 
-            // "program": "scripts/comparison_policy_multi_epoch_pad.py",
+            // "program": "scripts/comparison_policy_multi_epoch_pad_cheetah.py",
+            // "program": "scripts/save_figures_from_files.py",
+
             "console": "integratedTerminal"
         }
     ]

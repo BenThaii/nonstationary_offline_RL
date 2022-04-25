@@ -16,7 +16,7 @@ comparison_metrics.append(["trainer/Policy mu Std"])
 comparison_metrics.append(["trainer/Log Pis Mean"])
 comparison_metrics.append(["trainer/Log Pis Std"])
 # comparison_metrics.append(["evaluation/path length Mean"])
-# comparison_metrics.append(["evaluation/Average Returns"])
+comparison_metrics.append(["evaluation/Average Returns"])
 comparison_metrics.append(["trainer/min_qf1_loss_tau"])
 comparison_metrics.append(["trainer/min_qf2_loss_tau"])
 comparison_metrics.append(["trainer/min_q1_loss"])
@@ -35,14 +35,14 @@ method_names = []
 
 
 
-method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-play-v0-myfix-lagrange-5-20211124-2140/CQL_offline_mujoco_runs/antmaze-medium-play-v0_20211124_2140_2021_11_24_21_40_42_0000--s-0")
-method_names.append("antmaze myfix new lagrange = 5")
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-play-v0-myfix-lagrange-5-20211124-2140/CQL_offline_mujoco_runs/antmaze-medium-play-v0_20211124_2140_2021_11_24_21_40_42_0000--s-0")
+# method_names.append("antmaze myfix new lagrange = 5")
 
-# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-myfix-lagrange-neg1-20211123-2316/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20211123_2316_2021_11_23_23_16_02_0000--s-0")
-# method_names.append("antmaze myfix")
+method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-myfix-lagrange-neg1-20211123-2316/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20211123_2316_2021_11_23_23_16_02_0000--s-0")
+method_names.append("antmaze myfix")
 
-# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-original-torch14-lagrange-neg1-20211121-1801/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20211121_1801_2021_11_21_18_01_11_0000--s-0")
-# method_names.append("antmaze torch 1.4")
+method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-original-torch14-lagrange-neg1-20211121-1801/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20211121_1801_2021_11_21_18_01_11_0000--s-0")
+method_names.append("antmaze torch 1.4")
 
 # method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20211130-2340-completed/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20211130_2340_2021_11_30_23_40_14_0000--s-0")
 # method_names.append("antmaze opal no rewards")
@@ -192,8 +192,8 @@ min_idx = 0
 # max_idx = 300
 max_idx = 500
 
-plt_method = "min"
-# plt_method = "normal"
+# plt_method = "min"
+plt_method = "normal"
 for method in method_dirs:
     method_progress = pd.read_csv(os.path.join(method, progress_file_name))
     max_idx = min(len(method_progress), max_idx)

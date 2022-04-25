@@ -7,10 +7,14 @@ from datetime import datetime
 
 
 
-filename_dirs = ['vanilla_3000', 'pad_3000', 'pad_3000']
-use_pads = [False, False, True]
+filename_dirs = ['cheetah_vanilla_3000', 'cheetah_pad_3000_mse', 'cheetah_pad_3000_variational', 'cheetah_pad_3000_mse_invextralayer', 'cheetah_pad_3000_variational_invextralayer']
+use_pads = [False, True, True, True, True]
+
+# filename_dirs = ['cheetah_vanilla_3000', 'cheetah_pad_3000_variational_invextralayer']
+# use_pads = [False, True]
 epochs = range(2100, 3001, 300)
 seeds = range(0,1000, 100)
+inv_interval = 5
 
 eval_env_ls = []
 hasVariation_ls = []
@@ -99,132 +103,132 @@ variation_amplitude_ls = []
 
 
 
-# #experiment 11: broken Cheetah env, no variation
-# eval_env_ls.append('HalfCheetahBroken-v2')
-# hasVariation_ls.append(False)
-# variation_attribute_ls.append(None)
-# variation_type_ls.append(None)
-# variation_amplitude_ls.append(None)
+#experiment 11: broken Cheetah env, no variation
+eval_env_ls.append('HalfCheetahBroken-v2')
+hasVariation_ls.append(False)
+variation_attribute_ls.append(None)
+variation_type_ls.append(None)
+variation_amplitude_ls.append(None)
 
-# #experiment 12: broken Cheetah env, gravity linearly increase by 5
-# eval_env_ls.append('HalfCheetahBroken-v2')
-# hasVariation_ls.append(True)
-# variation_attribute_ls.append('gravity')
-# variation_type_ls.append('linear-increase')
-# variation_amplitude_ls.append(5)
-
-
-# #experiment 13: broken Cheetah env, gravity linearly increase by 10
-# eval_env_ls.append('HalfCheetahBroken-v2')
-# hasVariation_ls.append(True)
-# variation_attribute_ls.append('gravity')
-# variation_type_ls.append('linear-increase')
-# variation_amplitude_ls.append(10)
-
-# #experiment 14: broken Cheetah env, gravity linearly decrease by 5
-# eval_env_ls.append('HalfCheetahBroken-v2')
-# hasVariation_ls.append(True)
-# variation_attribute_ls.append('gravity')
-# variation_type_ls.append('linear-decrease')
-# variation_amplitude_ls.append(5)
-
-# #experiment 15: broken Cheetah env, gravity linearly decrease by 10
-# eval_env_ls.append('HalfCheetahBroken-v2')
-# hasVariation_ls.append(True)
-# variation_attribute_ls.append('gravity')
-# variation_type_ls.append('linear-decrease')
-# variation_amplitude_ls.append(10)
-
-
-
-#experiment 11: original env, dof_friction linearly increase by 5
-eval_env_ls.append('HalfCheetah-v2')
+#experiment 12: broken Cheetah env, gravity linearly increase by 5
+eval_env_ls.append('HalfCheetahBroken-v2')
 hasVariation_ls.append(True)
-variation_attribute_ls.append('dof_friction')
+variation_attribute_ls.append('gravity')
 variation_type_ls.append('linear-increase')
 variation_amplitude_ls.append(5)
 
 
-#experiment 12: original env, dof_friction linearly increase by 10
-eval_env_ls.append('HalfCheetah-v2')
+#experiment 13: broken Cheetah env, gravity linearly increase by 10
+eval_env_ls.append('HalfCheetahBroken-v2')
 hasVariation_ls.append(True)
-variation_attribute_ls.append('dof_friction')
+variation_attribute_ls.append('gravity')
 variation_type_ls.append('linear-increase')
 variation_amplitude_ls.append(10)
 
-#experiment 13: original env, dof_friction linearly decrease by 5
-eval_env_ls.append('HalfCheetah-v2')
+#experiment 14: broken Cheetah env, gravity linearly decrease by 5
+eval_env_ls.append('HalfCheetahBroken-v2')
 hasVariation_ls.append(True)
-variation_attribute_ls.append('dof_friction')
+variation_attribute_ls.append('gravity')
 variation_type_ls.append('linear-decrease')
 variation_amplitude_ls.append(5)
 
-#experiment 14: original env, dof_friction linearly decrease by 10
-eval_env_ls.append('HalfCheetah-v2')
+#experiment 15: broken Cheetah env, gravity linearly decrease by 10
+eval_env_ls.append('HalfCheetahBroken-v2')
 hasVariation_ls.append(True)
-variation_attribute_ls.append('dof_friction')
-variation_type_ls.append('linear-decrease')
-variation_amplitude_ls.append(10)
-
-#experiment 15: modified Cheetah env, dof_friction linearly increase by 5
-eval_env_ls.append('HalfCheetahModified-v2')
-hasVariation_ls.append(True)
-variation_attribute_ls.append('dof_friction')
-variation_type_ls.append('linear-increase')
-variation_amplitude_ls.append(5)
-
-
-#experiment 16: modified Cheetah env, dof_friction linearly increase by 10
-eval_env_ls.append('HalfCheetahModified-v2')
-hasVariation_ls.append(True)
-variation_attribute_ls.append('dof_friction')
-variation_type_ls.append('linear-increase')
-variation_amplitude_ls.append(10)
-
-#experiment 17: modified Cheetah env, dof_friction linearly decrease by 5
-eval_env_ls.append('HalfCheetahModified-v2')
-hasVariation_ls.append(True)
-variation_attribute_ls.append('dof_friction')
-variation_type_ls.append('linear-decrease')
-variation_amplitude_ls.append(5)
-
-#experiment 18: modified Cheetah env, dof_friction linearly decrease by 10
-eval_env_ls.append('HalfCheetahModified-v2')
-hasVariation_ls.append(True)
-variation_attribute_ls.append('dof_friction')
+variation_attribute_ls.append('gravity')
 variation_type_ls.append('linear-decrease')
 variation_amplitude_ls.append(10)
 
 
 
-# #experiment 15: broken Cheetah env, dof_friction linearly increase by 5
-# eval_env_ls.append('HalfCheetahBroken-v2')
+# #experiment 16: original env, dof_friction linearly increase by 5
+# eval_env_ls.append('HalfCheetah-v2')
 # hasVariation_ls.append(True)
 # variation_attribute_ls.append('dof_friction')
 # variation_type_ls.append('linear-increase')
 # variation_amplitude_ls.append(5)
 
 
-# #experiment 16: broken Cheetah env, dof_friction linearly increase by 10
-# eval_env_ls.append('HalfCheetahBroken-v2')
+# #experiment 17: original env, dof_friction linearly increase by 10
+# eval_env_ls.append('HalfCheetah-v2')
 # hasVariation_ls.append(True)
 # variation_attribute_ls.append('dof_friction')
 # variation_type_ls.append('linear-increase')
 # variation_amplitude_ls.append(10)
 
-# #experiment 17: broken Cheetah env, dof_friction linearly decrease by 5
-# eval_env_ls.append('HalfCheetahBroken-v2')
+# #experiment 18: original env, dof_friction linearly decrease by 5
+# eval_env_ls.append('HalfCheetah-v2')
 # hasVariation_ls.append(True)
 # variation_attribute_ls.append('dof_friction')
 # variation_type_ls.append('linear-decrease')
 # variation_amplitude_ls.append(5)
 
-# #experiment 18: broken Cheetah env, dof_friction linearly decrease by 10
-# eval_env_ls.append('HalfCheetahBroken-v2')
+# #experiment 19: original env, dof_friction linearly decrease by 10
+# eval_env_ls.append('HalfCheetah-v2')
 # hasVariation_ls.append(True)
 # variation_attribute_ls.append('dof_friction')
 # variation_type_ls.append('linear-decrease')
 # variation_amplitude_ls.append(10)
+
+# #experiment 20: modified Cheetah env, dof_friction linearly increase by 5
+# eval_env_ls.append('HalfCheetahModified-v2')
+# hasVariation_ls.append(True)
+# variation_attribute_ls.append('dof_friction')
+# variation_type_ls.append('linear-increase')
+# variation_amplitude_ls.append(5)
+
+
+# #experiment 21: modified Cheetah env, dof_friction linearly increase by 10
+# eval_env_ls.append('HalfCheetahModified-v2')
+# hasVariation_ls.append(True)
+# variation_attribute_ls.append('dof_friction')
+# variation_type_ls.append('linear-increase')
+# variation_amplitude_ls.append(10)
+
+# #experiment 22: modified Cheetah env, dof_friction linearly decrease by 5
+# eval_env_ls.append('HalfCheetahModified-v2')
+# hasVariation_ls.append(True)
+# variation_attribute_ls.append('dof_friction')
+# variation_type_ls.append('linear-decrease')
+# variation_amplitude_ls.append(5)
+
+# #experiment 23: modified Cheetah env, dof_friction linearly decrease by 10
+# eval_env_ls.append('HalfCheetahModified-v2')
+# hasVariation_ls.append(True)
+# variation_attribute_ls.append('dof_friction')
+# variation_type_ls.append('linear-decrease')
+# variation_amplitude_ls.append(10)
+
+
+
+#experiment 24: broken Cheetah env, dof_friction linearly increase by 5
+eval_env_ls.append('HalfCheetahBroken-v2')
+hasVariation_ls.append(True)
+variation_attribute_ls.append('dof_friction')
+variation_type_ls.append('linear-increase')
+variation_amplitude_ls.append(5)
+
+
+#experiment 25: broken Cheetah env, dof_friction linearly increase by 10
+eval_env_ls.append('HalfCheetahBroken-v2')
+hasVariation_ls.append(True)
+variation_attribute_ls.append('dof_friction')
+variation_type_ls.append('linear-increase')
+variation_amplitude_ls.append(10)
+
+#experiment 26: broken Cheetah env, dof_friction linearly decrease by 5
+eval_env_ls.append('HalfCheetahBroken-v2')
+hasVariation_ls.append(True)
+variation_attribute_ls.append('dof_friction')
+variation_type_ls.append('linear-decrease')
+variation_amplitude_ls.append(5)
+
+#experiment 27: broken Cheetah env, dof_friction linearly decrease by 10
+eval_env_ls.append('HalfCheetahBroken-v2')
+hasVariation_ls.append(True)
+variation_attribute_ls.append('dof_friction')
+variation_type_ls.append('linear-decrease')
+variation_amplitude_ls.append(10)
 
 
 
@@ -244,6 +248,7 @@ for index in range(len(eval_env_ls)):
         epochs= epochs,
         seeds = seeds,
         result_dir_name = dir_name,
-        last_experiment= last_experiment
+        last_experiment= last_experiment,
+        inv_interval = inv_interval
     )
     print("evaluated experiment {}/{}".format(index + 1, len(eval_env_ls)))

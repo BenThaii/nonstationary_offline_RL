@@ -14,6 +14,8 @@ from rlkit.torch.sac.cql_pad_noshared import CQLTrainer
 from rlkit.torch.networks import FlattenMlp, Mlp
 from rlkit.torch.torch_rl_algorithm import TorchBatchRLAlgorithm
 from datetime import datetime
+from torch.nn import functional as F
+
 
 
 import argparse, os
@@ -84,13 +86,23 @@ def experiment(variant):
         input_size=obs_dim,
         output_size=encoder_feature_dim,
         hidden_sizes= encoder_hidden_sizes,
+        output_activation=F.relu,                   #Ben: rather than using identity at last layer
     )
 
-    inv_network = FlattenMlp(
-        input_size= 2 * encoder_feature_dim,        #for both current, and next observation
-        output_size= action_dim, 
-        hidden_sizes= inv_hidden_sizes, 
-    )
+    if variant['inv_loss_type'] == "mse":
+        inv_network = FlattenMlp(
+            input_size= 2 * encoder_feature_dim,        #for both current, and next observation
+            output_size= action_dim, 
+            hidden_sizes= inv_hidden_sizes, 
+        )
+    elif variant['inv_loss_type'] == "variational":
+        inv_network = FlattenMlp(
+            input_size= 2 * encoder_feature_dim,        #for both current, and next observation
+            output_size= 2 * action_dim, 
+            hidden_sizes= inv_hidden_sizes, 
+        )
+    else:
+        raise Exception('can only accept "mse" or "variational" inv_loss_type')
 
     qf1 = FlattenMlp(
         input_size=obs_dim + action_dim,
@@ -191,9 +203,9 @@ if __name__ == "__main__":
         encoder_feature_dim=256,
         encoder_num_layers = 1,
         qf_num_layers = 3,
-        policy_num_layers = 2,
-        inv_num_layers = 1,
-        inv_loss_type = 'mse',
+        policy_num_layers = 1,
+        inv_num_layers = 2,
+
         replay_buffer_size=int(2E6),
         buffer_filename=None,
         load_buffer=None,
@@ -211,6 +223,7 @@ if __name__ == "__main__":
         #PAD,
         encoder_lr = 1e-5,
         inv_lr = 1e-5,
+        inv_loss_type = "mse",
         trainer_kwargs=dict(
             discount=0.99,
             soft_target_tau=5e-3,
@@ -239,7 +252,8 @@ if __name__ == "__main__":
 
             # PAD:
             use_pad_inv_loss = True,
-            inv_loss_start = 40000,        
+            inv_loss_start = 40000,  
+            inv_interval = 1,      
         ),
     )
     

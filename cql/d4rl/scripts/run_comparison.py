@@ -37,8 +37,49 @@ method_names = []
 # method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20220203-2220-completed/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20220203_2220_2022_02_03_22_20_14_0000--s-0")
 # method_names.append("torch 1.4")
 
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20220123-1754-completed-torch1.4/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20220123_1754_2022_01_23_17_54_16_0000--s-0")
+# method_names.append("torch 1.4 revived")
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20220322-2032-completed/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20220322_2032_2022_03_22_20_32_28_0000--s-0")
+# method_names.append("torch 1.4 new")
+
+method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20220323-2244-completed/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20220323_2244_2022_03_23_22_44_29_0000--s-0")
+method_names.append("torch 1.4 full")
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20220320-1547-terminated/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20220320_1547_2022_03_20_15_47_29_0000--s-0")
+# method_names.append("antmaze-medium-diverse-v0 t1.4 noshared, qf:256-3, 256-1,[1:2], ss 40,000, mse invloss, interval 5")      # CQL + PAD, cql_alpha unstable, inv loss doesn't decrease
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20220321-1759-completed/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20220321_1759_2022_03_21_17_59_41_0000--s-0")
+# method_names.append("antmaze-medium-diverse-v0 t1.4 noshared, encoder relu, qf:256-3, 256-1,[1:1], ss 40,000, mse invloss, interval 1")      # CQL + PAD, cql_alpha stable
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20220329-2342-completed/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20220329_2342_2022_03_29_23_42_01_0000--s-0")
+# method_names.append("antmaze-medium-diverse-v0 t1.4 noshared, encoder relu, qf:256-3, 256-1,[1:2], ss 40,000, mse invloss, interval 1")      
+
+method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20220407-1544/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20220407_1544_2022_04_07_15_44_48_0000--s-0")
+method_names.append("antmaze-medium-diverse-v0 t1.4 noshared, encoder relu, qf:256-3, 256-1,[1:2], ss 40,000, mse invloss, interval 1 v2")      
+
+method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20220408-0840-completed/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20220408_0840_2022_04_08_08_40_28_0000--s-0")
+method_names.append("antmaze-medium-diverse-v0 t1.4 noshared, encoder relu, qf:256-3, 256-1,[1:2], ss 40,000, mse invloss, interval 1 v2, relu")      
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20220329-2343-completed/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20220329_2343_2022_03_29_23_43_20_0000--s-0")
+# method_names.append("antmaze-medium-diverse-v0 t1.4 noshared, encoder relu, qf:256-3, 256-1,[1:1], ss 40,000, variational invloss, interval 1")      # CQL + PAD, cql_alpha stable
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20220405-2345-completed/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20220405_2345_2022_04_05_23_45_43_0000--s-0")
+# method_names.append("antmaze-medium-diverse-v0 t1.4 noshared, encoder relu, qf:256-3, 256-1,[1:2], ss 40,000, variational invloss, interval 1")      # CQL + PAD, cql_alpha stable
 
 
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20220321-1330/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20220321_1330_2022_03_21_13_30_35_0000--s-0")
+# method_names.append("antmaze-medium-diverse-v0 t1.4 noshared, policy_lr=1e-4, encoder relu, qf:256-3, 256-1,[1:1], ss 40,000")      # quite stable
+
+
+
+
+
+
+
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20220130-0913-terminated/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20220130_0913_2022_01_30_09_13_23_0000--s-0")
+# method_names.append("torch 1.4 3 layers, 1st layer shared, no ss")
 
 # method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/antmaze-medium-diverse-v0-20220130-0913-terminated/CQL_offline_mujoco_runs/antmaze-medium-diverse-v0_20220130_0913_2022_01_30_09_13_23_0000--s-0")
 # method_names.append("torch 1.4 3 layers, 1st layer shared, no ss")
@@ -167,17 +208,30 @@ method_names = []
 # method_names.append("cheetah-expert-v2 t1.4 256-2,[2:1], lr=1e-5, no ss, true soft sep, interval 4:2")      # cql_alpha saturates
 
 
-###### policy and q function does not have shared encoder
-method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/halfcheetah-expert-v2-20220218-1005-completed/CQL_offline_mujoco_runs/halfcheetah-expert-v2_20220218_1005_2022_02_18_10_05_13_0000--s-0")
-method_names.append("cheetah-expert-v2 t1.4 noshared, qf:256-3, 256-1,[2:1], no ss")      # performance is similar to vanilla CQL
+# # ##### policy and q function does not have shared encoder
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/halfcheetah-expert-v2-20220218-1005-completed/CQL_offline_mujoco_runs/halfcheetah-expert-v2_20220218_1005_2022_02_18_10_05_13_0000--s-0")
+# method_names.append("cheetah-expert-v2 t1.4 noshared, qf:256-3, 256-1,[2:1], no ss")      # performance is similar to vanilla CQL
 
 # method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/halfcheetah-expert-v2-20220219-0958-completed/CQL_offline_mujoco_runs/halfcheetah-expert-v2_20220219_0958_2022_02_19_09_58_45_0000--s-0")
 # method_names.append("cheetah-expert-v2 t1.4 noshared, qf:256-3, 256-2,[2:1], no ss")      # performance is slightly better than vanilla CQL
 
-method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/halfcheetah-expert-v2-20220225-1513/CQL_offline_mujoco_runs/halfcheetah-expert-v2_20220225_1513_2022_02_25_15_13_54_0000--s-0")
-method_names.append("cheetah-expert-v2 t1.4 noshared, qf:256-3, 256-1,[2:1], ss 40,000")      # check if more robust than vanilla CQL after 3000 training epoch
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/halfcheetah-expert-v2-20220225-1513-completed/CQL_offline_mujoco_runs/halfcheetah-expert-v2_20220225_1513_2022_02_25_15_13_54_0000--s-0")
+# method_names.append("cheetah-expert-v2 t1.4 noshared, qf:256-3, 256-1,[2:1], ss 40,000")      # more robust than vanilla CQL after 3000 epochs
 
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/halfcheetah-expert-v2-20220305-1031-completed/CQL_offline_mujoco_runs/halfcheetah-expert-v2_20220305_1031_2022_03_05_10_31_04_0000--s-0")
+# method_names.append("cheetah-expert-v2 t1.4 noshared, qf:256-3, 256-1,[2:1], ss 40,000, variational invloss")      # same as above -> dont need to reuse the policy
 
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/halfcheetah-expert-v2-20220318-0818-completed/CQL_offline_mujoco_runs/halfcheetah-expert-v2_20220318_0818_2022_03_18_08_18_25_0000--s-0")
+# method_names.append("cheetah-expert-v2 t1.4 noshared, qf:256-3, 256-1,[1:1], ss 40,000, mse invloss")      # normal mse inv loss
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/halfcheetah-expert-v2-20220317-0942-completed/CQL_offline_mujoco_runs/halfcheetah-expert-v2_20220317_0942_2022_03_17_09_42_10_0000--s-0")
+# method_names.append("cheetah-expert-v2 t1.4 noshared, qf:256-3, 256-1,[1:1], ss 40,000, variational invloss")      # normal variational inv loss
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/halfcheetah-expert-v2-20220316-0933-completed/CQL_offline_mujoco_runs/halfcheetah-expert-v2_20220316_0933_2022_03_16_09_33_25_0000--s-0")
+# method_names.append("cheetah-expert-v2 t1.4 noshared, qf:256-3, 256-1,[1:2], ss 40,000, variational invloss")      # more layers in inverse network
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/halfcheetah-expert-v2-20220319-0958-completed/CQL_offline_mujoco_runs/halfcheetah-expert-v2_20220319_0958_2022_03_19_09_58_19_0000--s-0")
+# method_names.append("cheetah-expert-v2 t1.4 noshared, qf:256-3, 256-1,[1:2], ss 40,000, mse invloss")      # more layers in inverse network
 
 # method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/halfcheetah-expert-v2-20220220-0958-terminated/CQL_offline_mujoco_runs/halfcheetah-expert-v2_20220220_0958_2022_02_20_09_58_22_0000--s-0")
 # method_names.append("cheetah-expert-v2 t1.4 noshared, qf:256-3, 256-2,[2:1], no ss, cont, BC 40,000")     
@@ -197,7 +251,69 @@ method_names.append("cheetah-expert-v2 t1.4 noshared, qf:256-3, 256-1,[2:1], ss 
 # method_names.append("cheetah-expert-v2 t1.4 noshared, qf:256-3, 256-2,[2:1], ss 40,000, cont, no BC, no policy reuse")      # same as above -> dont need to reuse the policy
 
 
+###### hopper environment
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/hopper-expert-v2-20220226-2216-completed/CQL_offline_mujoco_runs/hopper-expert-v2_20220226_2216_2022_02_26_22_16_50_0000--s-0")
+# method_names.append("hopper-expert-v2 t1.4 standard, qf:256-3, 256-1,[1:1]")            # vanilla CQL, same number of layers as the original CQL in the paper  
 
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/hopper-expert-v2-20220228-0846-completed/CQL_offline_mujoco_runs/hopper-expert-v2_20220228_0846_2022_02_28_08_46_17_0000--s-0")
+# method_names.append("hopper-expert-v2 t1.4 noshared, qf:256-3, 256-1,[1:1], no ss")     # vanilla CQL using cql_noshared code, same number of layers as the original CQL in the paper  
+
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/hopper-expert-v2-20220227-1250-completed/CQL_offline_mujoco_runs/hopper-expert-v2_20220227_1250_2022_02_27_12_50_45_0000--s-0")
+# method_names.append("hopper-expert-v2 t1.4 noshared, qf:256-3, 256-1,[1:1], ss 40,000")    # CQL + PAD, same number of layers as above
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/hopper-expert-v2-20220326-1740-completed/CQL_offline_mujoco_runs/hopper-expert-v2_20220326_1740_2022_03_26_17_40_24_0000--s-0")
+# method_names.append("hopper-expert-v2 t1.4 noshared, qf:256-3, 256-1,[1:1], ss 40,000, mse invloss, true encoder")     
+
+# # method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/hopper-expert-v2-20220313-1157-completed/CQL_offline_mujoco_runs/hopper-expert-v2_20220313_1157_2022_03_13_11_57_38_0000--s-0")
+# # method_names.append("hopper-expert-v2 t1.4 noshared, qf:256-3, 256-1,[1:1], ss 40,000, interval 5")    # same number of layers, with interval
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/hopper-expert-v2-20220327-2330-completed/CQL_offline_mujoco_runs/hopper-expert-v2_20220327_2330_2022_03_27_23_30_11_0000--s-0")
+# method_names.append("hopper-expert-v2 t1.4 noshared, qf:256-3, 256-1,[1:2], ss 40,000, mse invloss, true encoder")   
+
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/hopper-expert-v2-20220301-0018-completed/CQL_offline_mujoco_runs/hopper-expert-v2_20220301_0018_2022_03_01_00_18_05_0000--s-0")
+# method_names.append("hopper-expert-v2 t1.4 noshared, qf:256-3, 256-2,[2:1], ss 40,000")    # CQL + PAD,  more layers
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/hopper-expert-v2-20220308-1834-completed/CQL_offline_mujoco_runs/hopper-expert-v2_20220308_1834_2022_03_08_18_34_30_0000--s-0")
+# method_names.append("hopper-expert-v2 t1.4 standard, qf:256-3, 256-1,[2:_]")      # note: to have the same number of layers as the one below the one w/ inv loss
+
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/hopper-expert-v2-20220306-2259-completed/CQL_offline_mujoco_runs/hopper-expert-v2_20220306_2259_2022_03_06_22_59_26_0000--s-0")
+# method_names.append("hopper-expert-v2 t1.4 noshared, qf:256-3, 256-1,[2:1], ss 40,000, variational invloss")      # note: has more layers than cql + PAD w/ mse loss. Better than (1. vanilla CQL and 2. PAD w/ no ss and 3. cql+pad+mse loss)
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/hopper-expert-v2-20220309-2220-completed/CQL_offline_mujoco_runs/hopper-expert-v2_20220309_2220_2022_03_09_22_20_27_0000--s-0")
+# method_names.append("hopper-expert-v2 t1.4 noshared, qf:256-3, 256-1,[2:1], ss 40,000, mse invloss")      # note: has more layers than cql + PAD w/ mse loss. Better than (1. vanilla CQL and 2. PAD w/ no ss and 3. cql+pad+mse loss)
+
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/hopper-expert-v2-20220307-2032-completed/CQL_offline_mujoco_runs/hopper-expert-v2_20220307_2032_2022_03_07_20_32_32_0000--s-0")
+# method_names.append("hopper-expert-v2 t1.4 noshared, qf:256-3, 256-1,[1:1], ss 40,000, variational invloss")      # better than 
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/hopper-expert-v2-20220326-1742-completed/CQL_offline_mujoco_runs/hopper-expert-v2_20220326_1742_2022_03_26_17_42_49_0000--s-0")
+# method_names.append("hopper-expert-v2 t1.4 noshared, qf:256-3, 256-1,[1:1], ss 40,000, variational invloss, true encoder")     
+
+# # method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/hopper-expert-v2-20220310-2237-completed/CQL_offline_mujoco_runs/hopper-expert-v2_20220310_2237_2022_03_10_22_37_49_0000--s-0")
+# # method_names.append("hopper-expert-v2 t1.4 noshared, qf:256-3, 256-1,[1:2], ss 40,000, variational invloss")      # CQL + PAD, same number of layers (policy, q-functions, etc.), 1 extra inv network layer
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/hopper-expert-v2-20220327-2329-completed/CQL_offline_mujoco_runs/hopper-expert-v2_20220327_2329_2022_03_27_23_29_33_0000--s-0")
+# method_names.append("hopper-expert-v2 t1.4 noshared, qf:256-3, 256-1,[1:2], ss 40,000, variational invloss, true encoder")   
+ 
+
+########## WALKER2D environment
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql_with_opal/d4rl/logger/CQL-offline-mujoco-runs/walker2d-expert-v2-20220324-2157-completed/CQL_offline_mujoco_runs/walker2d-expert-v2_20220324_2157_2022_03_24_21_57_00_0000--s-0")
+# method_names.append("walker2d-expert-v2, torch 1.4")
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/walker2d-expert-v2-20220325-1201-completed/CQL_offline_mujoco_runs/walker2d-expert-v2_20220325_1201_2022_03_25_12_01_46_0000--s-0")
+# method_names.append("walker2d-expert-v2 t1.4 noshared, qf:256-3, 256-1,[1:1], ss 40,000, mse invloss")    # CQL + PAD, same number of layers as above
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/walker2d-expert-v2-20220405-0009-completed/CQL_offline_mujoco_runs/walker2d-expert-v2_20220405_0009_2022_04_05_00_09_07_0000--s-0")
+# method_names.append("walker2d-expert-v2 t1.4 noshared, qf:256-3, 256-1,[1:2], ss 40,000, mse invloss")    # CQL + PAD, same number of layers as abov
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/walker2d-expert-v2-20220402-2101-completed/CQL_offline_mujoco_runs/walker2d-expert-v2_20220402_2101_2022_04_02_21_01_08_0000--s-0")
+# method_names.append("walker2d-expert-v2 t1.4 noshared, qf:256-3, 256-1,[1:1], ss 40,000, variational invloss")    # CQL + PAD, same number of layers as above
+
+# method_dirs.append("/home/ben/offline_RL/nonstationary_offline_RL/cql/d4rl/logger/CQL-offline-mujoco-runs/walker2d-expert-v2-20220404-0034-completed/CQL_offline_mujoco_runs/walker2d-expert-v2_20220404_0034_2022_04_04_00_34_40_0000--s-0")
+# method_names.append("walker2d-expert-v2 t1.4 noshared, qf:256-3, 256-1,[1:2], ss 40,000, variational invloss")    # CQL + PAD, same number of layers as abov
 
 
 assert(len(method_dirs) == len(method_names))
@@ -232,7 +348,8 @@ for metric_idx, metric_vals in enumerate(comparison_metrics):
         method_progress = pd.read_csv(os.path.join(method_dirs[method_idx], progress_file_name))
         # plt.scatter(method_progress["Epoch"], method_progress[comparison_metric])
         for metric in metric_vals:
-            if metric == "trainer/min_q1_loss" or metric == "trainer/min_q2_loss":
+            # if metric == "trainer/min_q1_loss" or metric == "trainer/min_q2_loss":
+            if False:
                 if plt_method == "normal":
                     subplot.plot(method_progress["Epoch"][1:], np.divide(list(method_progress[metric][1:]),list(method_progress["trainer/Alpha_prime"][:-1])), label = method_names[method_idx] + "_pre_cql_alpha", alpha=0.5)
                 elif plt_method == "min":

@@ -4,7 +4,7 @@ from rlkit.envs.wrappers import NormalizedBoxEnv
 from rlkit.launchers.launcher_util import setup_logger
 from rlkit.samplers.data_collector import MdpPathCollector, CustomMDPPathCollector
 from rlkit.torch.sac.policies import TanhGaussianPolicy, MakeDeterministic
-from rlkit.torch.sac.cql import CQLTraineruto
+from rlkit.torch.sac.cql import CQLTrainer
 # from rlkit.torch.sac.cql_myfix import CQLTrainer
 # from rlkit.torch.sac.cql_policy_update_first_contributor import CQLTrainer
 from rlkit.torch.networks import FlattenMlp
@@ -18,6 +18,20 @@ import numpy as np
 import h5py
 import d4rl, gym
 
+from prettytable import PrettyTable
+
+def count_parameters(model):
+    table = PrettyTable(["Modules", "Parameters"])
+    total_params = 0
+    for name, parameter in model.named_parameters():
+        if not parameter.requires_grad: continue
+        param = parameter.numel()
+        table.add_row([name, param])
+        total_params+=param
+    print(table)
+    print(f"Total Trainable Params: {total_params}")
+    return total_params
+    
 def load_hdf5(dataset, replay_buffer):
     replay_buffer._observations = dataset['observations']
     replay_buffer._next_obs = dataset['next_observations']

@@ -7,7 +7,7 @@ from rlkit.core import logger
 import copy
 from rlkit.torch.pad.networks import nonstationary_rollout_pad
 from grounding_codes.atp_envs import *
-
+import gym
 
 filename = str(uuid.uuid4())
 
@@ -17,6 +17,7 @@ def simulate_policy(args):
     policy = data['evaluation/policy']
     # env = data['evaluation/env']
     env = gym.make(args.eval_env)
+    # env = gym.wrappers.Monitor(env, "~/.Videos",force=True)
 
 
     print("Policy loaded")
@@ -46,7 +47,9 @@ if __name__ == "__main__":
     parser.add_argument('--H', type=int, default=300,
                         help='Max length of rollout')
     parser.add_argument('--gpu', action='store_true')       # set to true if this argument is encountered
-    parser.add_argument("--eval_env", type=str, default='HalfCheetahModified-v2')
+    # parser.add_argument("--eval_env", type=str, default='HalfCheetahModified-v2')
+    parser.add_argument("--eval_env", type=str, default='HalfCheetahBroken-v2')
+    # parser.add_argument("--eval_env", type=str, default='antmaze-medium-diverse-v0')
     parser.add_argument("--use_pad", action='store_true')
 
     args = parser.parse_args()

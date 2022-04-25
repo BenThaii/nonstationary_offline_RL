@@ -52,6 +52,7 @@ class CQLTrainer(TorchTrainer):
             # PAD
             use_pad_inv_loss = True,
             inv_loss_start=40000,
+            inv_interval = 1,
     ):
         super().__init__()
         self.env = env
@@ -133,6 +134,8 @@ class CQLTrainer(TorchTrainer):
         # pad
         self.use_pad_inv_loss = use_pad_inv_loss
         self.inv_loss_start = inv_loss_start
+        self.inv_interval = inv_interval
+        self._inv_total_epoch = 0
 
     def _get_tensor_values(self, obs, actions, network=None):
         action_shape = actions.shape[0]
@@ -321,8 +324,9 @@ class CQLTrainer(TorchTrainer):
             )
 
         """Inverse Dynamics Updates"""
-        if self.use_pad_inv_loss and self._current_epoch > self.inv_loss_start:
+        if self.use_pad_inv_loss and self._current_epoch % self.inv_interval == 0 and self._current_epoch > self.inv_loss_start:
             inv_loss = self.policy.update_inv(obs, next_obs, actions)
+            self._inv_total_epoch += inv_loss
 
             
 
@@ -423,7 +427,8 @@ class CQLTrainer(TorchTrainer):
                 self.eval_statistics['alpha prime loss'] = alpha_prime_loss.item()
             if self.use_pad_inv_loss:
                 if self._current_epoch > self.inv_loss_start:
-                    self.eval_statistics['self-supervised inv loss'] = inv_loss
+                    self.eval_statistics['self-supervised inv loss'] = self._inv_total_epoch
+                    self._inv_total_epoch = 0
                 else:
                     self.eval_statistics['self-supervised inv loss'] = 0
         self._n_train_steps_total += 1
